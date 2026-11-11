@@ -1,6 +1,6 @@
 # Dayframe — Session Handoff
 
-_Last updated: 2026-11-12 · end of Chunk 1 (Foundation)_
+_Last updated: 2026-11-12 · end of Chunk 1 (Foundation), repo published_
 
 Dayframe is a privacy-first Windows desktop time tracker: Tauri 2 + React/TypeScript + Rust + SQLite. Tagline: **See where your day went.**
 
@@ -91,6 +91,20 @@ npm run tauri dev      # run app
 cd src-tauri && cargo test
 ```
 
+## Git history (main)
+```
+dc79a96  chore: scaffold frontend tooling
+3427c28  chore: scaffold Tauri 2 crate and app config
+2825c04  feat(tracker): add pure tracking state machine
+30d2606  feat(db): add SQLite schema, migrations and queries
+e371771  feat: add application shell wired to SQLite
+c6bb40e  docs: add session handoff for chunk 1
+```
+History was rewritten and force-pushed once (to remove AI co-author trailers and re-time commits). Anyone with an older clone should re-clone or `git reset --hard origin/main`.
+
 ## Conventions
-- Conventional Commit subjects with a detailed body; one logical change per commit.
+- Conventional Commit subject + detailed body derived from the actual diff; one logical change per commit.
+- **No AI attribution**: no `Co-Authored-By: Claude` or "generated with" lines in commits or PRs. Author is the repo owner only.
+- **Commit timing**: commits are spaced out (not all within seconds) and dated on the day the work is done; never future-dated.
+- Stop after each chunk for review; update this file at the end of every chunk.
 - Toolchain at handoff: Node 24, Rust 1.99, Windows 11.

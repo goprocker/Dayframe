@@ -3,7 +3,7 @@
 use std::sync::atomic::Ordering;
 
 use serde::Serialize;
-use tauri::{AppHandle, Manager, State};
+use tauri::{AppHandle, Emitter, Manager, State};
 use tauri_plugin_autostart::ManagerExt;
 
 use crate::categories::CATEGORIES;
@@ -26,6 +26,7 @@ pub struct SettingsView {
     pub theme: String,
     pub idle_threshold_minutes: i64,
     pub autostart: bool,
+    pub widget: bool,
     pub data_dir: String,
     pub version: String,
     pub categories: Vec<String>,
@@ -43,6 +44,7 @@ pub fn get_settings(app: AppHandle, state: State<'_, AppState>) -> CmdResult<Set
         theme: get(THEME_KEY).unwrap_or_else(|| "system".into()),
         idle_threshold_minutes: idle_ms / 60_000,
         autostart: app.autolaunch().is_enabled().unwrap_or(false),
+        widget: get(crate::widget::ENABLED_KEY).as_deref() == Some("1"),
         data_dir: app
             .path()
             .app_data_dir()
@@ -75,12 +77,17 @@ pub fn set_tracking_paused(app: AppHandle, state: State<'_, AppState>, paused: b
 }
 
 #[tauri::command]
-pub fn set_theme(state: State<'_, AppState>, theme: String) -> CmdResult<()> {
+pub fn set_theme(app: AppHandle, state: State<'_, AppState>, theme: String) -> CmdResult<()> {
     if !matches!(theme.as_str(), "system" | "dark" | "light") {
         return Err("invalid theme".into());
     }
-    let conn = state.db.lock().map_err(err)?;
-    db::set_setting(&conn, THEME_KEY, &theme).map_err(err)
+    {
+        let conn = state.db.lock().map_err(err)?;
+        db::set_setting(&conn, THEME_KEY, &theme).map_err(err)?;
+    }
+    // The widget window follows the dashboard's theme.
+    let _ = app.emit("theme", &theme);
+    Ok(())
 }
 
 #[tauri::command]

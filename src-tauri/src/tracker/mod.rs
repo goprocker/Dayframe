@@ -114,6 +114,7 @@ fn run(app: AppHandle, ctl: Arc<Control>) {
         load_settings(&conn, &mut engine);
     }
     let mut last_emit: Option<Snapshot> = None;
+    let widget = app.state::<crate::widget::WidgetState>();
 
     loop {
         let stopping = ctl.stop.load(Ordering::SeqCst);
@@ -170,6 +171,10 @@ fn run(app: AppHandle, ctl: Arc<Control>) {
         if stopping {
             break;
         }
+        // Only sample fullscreen while the widget is on; the widget module
+        // ignores repeats.
+        let fullscreen = widget.enabled.load(Ordering::SeqCst) && win::foreground_is_fullscreen();
+        crate::widget::set_fullscreen(&app, fullscreen);
         thread::sleep(TICK);
     }
 }

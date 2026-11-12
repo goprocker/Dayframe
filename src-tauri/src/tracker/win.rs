@@ -160,6 +160,47 @@ fn file_description(path: &str) -> Option<String> {
     }
 }
 
+/// True when the foreground window covers its whole monitor (games, video,
+/// presentations). The desktop and shell windows never count.
+pub fn foreground_is_fullscreen() -> bool {
+    use windows::Win32::Foundation::RECT;
+    use windows::Win32::Graphics::Gdi::{
+        GetMonitorInfoW, MonitorFromWindow, MONITORINFO, MONITOR_DEFAULTTONULL,
+    };
+    use windows::Win32::UI::WindowsAndMessaging::{
+        GetClassNameW, GetDesktopWindow, GetShellWindow, GetWindowRect,
+    };
+    unsafe {
+        let hwnd = GetForegroundWindow();
+        if hwnd.0.is_null() || hwnd == GetDesktopWindow() || hwnd == GetShellWindow() {
+            return false;
+        }
+        let mut class = [0u16; 32];
+        let n = GetClassNameW(hwnd, &mut class).max(0) as usize;
+        let class = String::from_utf16_lossy(&class[..n]);
+        if class == "WorkerW" || class == "Progman" {
+            return false;
+        }
+        let mut r = RECT::default();
+        if GetWindowRect(hwnd, &mut r).is_err() {
+            return false;
+        }
+        let mon = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONULL);
+        if mon.is_invalid() {
+            return false;
+        }
+        let mut mi = MONITORINFO {
+            cbSize: std::mem::size_of::<MONITORINFO>() as u32,
+            ..Default::default()
+        };
+        if !GetMonitorInfoW(mon, &mut mi).as_bool() {
+            return false;
+        }
+        let m = mi.rcMonitor;
+        r.left <= m.left && r.top <= m.top && r.right >= m.right && r.bottom >= m.bottom
+    }
+}
+
 /// Milliseconds since the last keyboard or mouse input in this session.
 pub fn idle_ms() -> i64 {
     unsafe {

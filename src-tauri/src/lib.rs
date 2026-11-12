@@ -5,6 +5,7 @@ mod settings;
 mod stats;
 mod tracker;
 mod tray;
+mod widget;
 
 use std::sync::atomic::Ordering;
 use std::sync::{Arc, Mutex};
@@ -63,6 +64,22 @@ fn range_totals(state: tauri::State<'_, AppState>, bounds: Vec<i64>) -> Result<V
     stats::range_totals(&conn, &bounds).map_err(|e| e.to_string())
 }
 
+/// Multi-day analytics over consecutive local-day ranges (≤ 92 days).
+#[tauri::command]
+fn range_summary(
+    state: tauri::State<'_, AppState>,
+    bounds: Vec<i64>,
+) -> Result<stats::RangeSummary, String> {
+    if bounds.len() < 2
+        || bounds.len() > 93
+        || bounds.windows(2).any(|w| w[1] <= w[0] || w[1] - w[0] > 26 * 3_600_000)
+    {
+        return Err("invalid bounds".into());
+    }
+    let conn = state.db.lock().map_err(|e| e.to_string())?;
+    stats::range_summary(&conn, &bounds).map_err(|e| e.to_string())
+}
+
 /// Icons as base64 PNG keyed by app id. Missing icons are extracted first
 /// (outside the DB lock) and cached.
 #[tauri::command]
@@ -110,6 +127,11 @@ pub fn run() {
             let ctl = Arc::new(Control::default());
             let consented = db::get_setting(&conn, settings::CONSENT_KEY)?.as_deref() == Some("1");
             ctl.consented.store(consented, Ordering::SeqCst);
+            // Managed before the tracker thread starts: it reads this state.
+            let ws = widget::WidgetState::default();
+            let widget_on = db::get_setting(&conn, widget::ENABLED_KEY)?.as_deref() == Some("1");
+            ws.enabled.store(widget_on, Ordering::SeqCst);
+            app.manage(ws);
             app.manage(AppState {
                 db: Mutex::new(conn),
                 tracker: ctl.clone(),
@@ -118,6 +140,7 @@ pub fn run() {
             let handle = tracker::spawn(app.handle().clone(), ctl);
             *app.state::<AppState>().tracker_thread.lock().unwrap() = Some(handle);
             tray::build(app.handle())?;
+            widget::apply(app.handle());
             // Autostart launches straight to the tray.
             if !std::env::args().any(|a| a == MINIMIZED_ARG) {
                 tray::show_main(app.handle());
@@ -139,6 +162,11 @@ pub fn run() {
             day_summary,
             range_totals,
             app_icons,
+            range_summary,
+            widget::set_widget_enabled,
+            widget::set_widget_expanded,
+            widget::save_widget_position,
+            widget::open_dashboard,
             settings::get_settings,
             settings::set_tracking_consent,
             settings::set_tracking_paused,

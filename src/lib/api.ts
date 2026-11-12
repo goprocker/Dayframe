@@ -32,3 +32,30 @@ export const api = {
   onTrackerState: (cb: (s: TrackerState) => void): Promise<UnlistenFn> =>
     listen<TrackerState>("tracker://state", (e) => cb(e.payload)),
 };
+
+export interface AppUsage {
+  appId: number;
+  name: string;
+  category: string;
+  seconds: number;
+  sessions: number;
+}
+
+export interface DaySummary {
+  from: number;
+  to: number;
+  totalSeconds: number;
+  switches: number;
+  longest: { appId: number; name: string; seconds: number; start: number } | null;
+  apps: AppUsage[];
+  hourly: number[];
+  timeline: { appId: number; start: number; end: number }[];
+}
+
+export const stats = {
+  day: (from: number, to: number) =>
+    invoke<DaySummary>("day_summary", { from, to }),
+  rangeTotals: (bounds: number[]) =>
+    invoke<number[]>("range_totals", { bounds }),
+  icons: () => invoke<Record<string, string>>("app_icons"),
+};

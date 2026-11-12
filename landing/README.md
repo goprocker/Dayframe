@@ -6,7 +6,7 @@ Marketing site for Dayframe. Plain HTML/CSS/JS built with Vite; separate from th
 cd landing
 npm install
 npm run dev       # http://localhost:5180
-npm run build     # output in landing/dist
+npm run build     # output in landing/dist (index + changelog pages)
 npm run preview
 ```
 
@@ -14,15 +14,34 @@ npm run preview
 
 ```
 landing/
-  index.html          page markup + SVG cloud filters
-  public/img/         app screenshots and icon
+  index.html          page markup
+  changelog.html      changelog page (second Vite entry)
+  vercel.json         Vercel build, clean URLs, /download/* as attachments
+  public/download/    Windows installer
+  public/video/       hero video (dayframe.mp4)
+  public/img/         hero art, timeline illustrations, shots/ app screenshots
   src/main.js         loader, flowers, scroll reveal, version stamp
-  src/clouds.js       generates hero clouds, scattered clouds, cloud bands
+  src/hero.js         meadow parallax, petals, butterflies
+  src/video.js        hero video loop + popup player
+  src/scroll.js       scroll-driven motion, pinned tour reel
+  src/clouds.js       canvas-painted clouds and cloud bands
+  src/cursor.js       custom cursor (mouse only)
+  src/downloads.js    installer download counter
+  src/changelog.js    changelog page entry
   src/styles/
     base.css          tokens, nav, buttons, loader, shared section styles
     clouds.css        cloud layers and bands
     sections.css      per-section styles
+    changelog.css     changelog page
 ```
+
+## Deploy
+
+On Vercel, set the project root directory to `landing`; `vercel.json` handles the rest.
+
+## Download counter
+
+Installer clicks add one to an anonymous public counter. Localhost is never counted; open the live site once with `?me=1` to exclude your browser (`?me=0` undoes it).
 
 ## Versioning
 

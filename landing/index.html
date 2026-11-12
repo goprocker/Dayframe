@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dayframe — See where your day went</title>
+  <meta name="description" content="Privacy-first time tracking for Windows. See where your day went. Nothing leaves your PC.">
+  <link rel="icon" href="/img/app-icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<!-- SVG filters that turn plain blobs into fluffy clouds -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="cloud-edge" x="-15%" y="-15%" width="130%" height="130%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="3" seed="4" result="noise"/>
+    <feDisplacementMap in="SourceGraphic" in2="noise" scale="26" xChannelSelector="R" yChannelSelector="G" result="rough"/>
+    <feGaussianBlur in="rough" stdDeviation="1.4"/>
+  </filter>
+</svg>
+
+<div id="loader">
+  <div class="bar"><i></i></div>
+  <div class="row"><span class="brand">Dayframe</span><span class="pct"><span id="pct">0</span><small>%</small></span></div>
+</div>
+
+<a class="logo" href="#top">Dayframe.</a>
+<nav class="nav">
+  <a class="l" href="#tour">Tour</a>
+  <a class="l" href="#screens">Screens</a>
+  <a class="l" href="#features">Features</a>
+  <a class="l" href="#day">Your day</a>
+  <a class="pill dark" href="#download">Download</a>
+</nav>
+
+<main id="top">
+  <section class="hero" data-clouds="hero">
+    <h1>See where your day<br><em>actually</em> went.</h1>
+    <p class="sub">Privacy-first time tracking for Windows. Nothing leaves your PC.</p>
+    <div class="ctas"><a class="pill dark" href="#download">Download for Windows</a><a class="pill" href="#tour">Take the tour</a></div>
+    <div class="monitor" aria-label="Retro computer showing the Dayframe dashboard">
+      <div class="case">
+        <span class="cam"></span>
+        <div class="bezel">
+          <div class="screen"><img src="/img/dashboard.png" alt="Dayframe dashboard showing a day timeline and per-app totals"><span class="glass"></span></div>
+        </div>
+        <div class="label">dayframe</div>
+        <div class="base">
+          <span class="spk"></span>
+          <span class="ports"><i></i><i></i></span>
+          <span class="slot"></span>
+          <span class="pwr"></span>
+          <span class="spk"></span>
+        </div>
+      </div>
+    </div>
+    <div class="meadow"></div>
+    <div class="flowers" id="flowers"></div>
+  </section>
+
+  <section id="tour" class="tour" data-clouds="scatter">
+    <div class="head rv"><h2>Your day, <em>in frames</em></h2><p>Every view, built to answer one question fast.</p></div>
+    <div class="reel">
+      <div class="tall rv"><div class="img"><img src="/img/dashboard.png" alt="" style="object-position:20% 0"><span class="play"></span></div><div class="lbl">Day timeline</div></div>
+      <div class="tall rv"><div class="img"><img src="/img/analytics.png" alt="" style="object-position:30% 0"></div><div class="lbl">Trends</div></div>
+      <div class="tall rv"><div class="img"><img src="/img/widget-open.png" alt=""></div><div class="lbl">Floating widget</div></div>
+      <div class="tall rv"><div class="img"><img src="/img/dashboard-light.png" alt="" style="object-position:70% 0"></div><div class="lbl">Light mode</div></div>
+      <div class="tall rv"><div class="img"><img src="/img/settings.png" alt="" style="object-position:40% 0"></div><div class="lbl">Your rules</div></div>
+      <div class="tall rv"><div class="img"><img src="/img/onboarding.png" alt=""></div><div class="lbl">Consent first</div></div>
+    </div>
+  </section>
+
+  <div class="cloud-band" data-band="white"></div>
+
+  <section id="screens" class="screens">
+    <div class="head rv"><h2>The <em>full</em> picture</h2><p>Dashboard and analytics, side by side.</p></div>
+    <div class="wide-grid">
+      <div class="wide rv"><div class="img"><img src="/img/dashboard.png" alt="Dashboard"></div><div class="lbl">Dashboard<span>Active time, switches, longest session, hourly bars.</span></div></div>
+      <div class="wide rv"><div class="img"><img src="/img/analytics.png" alt="Analytics"></div><div class="lbl">Analytics<span>7, 14 and 30-day views by category and hour.</span></div></div>
+      <div class="wide rv"><div class="img"><img src="/img/dashboard-light.png" alt="Light theme"></div><div class="lbl">Light theme<span>Dark, light, or follow Windows.</span></div></div>
+      <div class="wide rv"><div class="img"><img src="/img/settings.png" alt="Settings"></div><div class="lbl">Settings<span>Exclude apps, recategorise, delete any range.</span></div></div>
+    </div>
+    <div class="center"><a class="pill dark" href="#download">Get Dayframe</a></div>
+  </section>
+
+  <div class="cloud-band flip" data-band="sky"></div>
+
+  <section id="features" class="features" data-clouds="scatter">
+    <div class="head rv"><h2>Built <em>for focus</em></h2></div>
+    <div class="glass-grid">
+      <div class="gcard rv"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><h3>Automatic tracking</h3><p>Samples the foreground app once a second. No timers to start, nothing to remember.</p></div>
+      <div class="gcard rv"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></svg><h3>Private by design</h3><p>Local SQLite only. No network code, no telemetry, no window titles or URLs.</p></div>
+      <div class="gcard rv"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><h3>Real insight</h3><p>Timeline, per-app totals, categories and hour-of-day trends across 30 days.</p></div>
+      <div class="gcard rv"><svg viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="8" rx="4"/><circle cx="8" cy="12" r="1.5"/></svg><h3>Floating widget</h3><p>An always-on-top pill with your current app and session. Hides for fullscreen.</p></div>
+    </div>
+  </section>
+
+  <section id="day" class="timeline" data-clouds="dusk">
+    <div class="giant rv">A day, <em>framed</em></div>
+    <div class="stack">
+      <div class="step rv"><h4>08:00 — Start</h4><p>Dayframe launches with Windows, minimized to the tray, and starts counting.</p><div class="art a1"></div></div>
+      <div class="step rv"><h4>10:30 — Deep work</h4><p>Your longest session is logged. App switches tell you how focused it really was.</p><div class="art a2"></div></div>
+      <div class="step rv"><h4>13:00 — Away</h4><p>Idle for 5 minutes? Time stops from the moment input stopped. Lock and sleep never count.</p><div class="art a3"></div></div>
+      <div class="step rv"><h4>18:00 — Review</h4><p>Open the dashboard. See exactly where the day went, and what to change tomorrow.</p><div class="art a4"></div></div>
+    </div>
+  </section>
+
+  <section id="download" class="contact" data-clouds="scatter">
+    <div class="head rv"><h2>Get <em>started</em></h2><p>Free. Per-user install, no admin rights needed.</p></div>
+    <div class="dl rv">
+      <aside>
+        <img src="/img/app-icon.svg" alt="">
+        <p class="muted">Dayframe <span data-version></span></p>
+        <h3>Windows 10 / 11</h3>
+        <ul>
+          <li>⬇ x64 NSIS installer</li>
+          <li>◷ Tracks from first launch</li>
+          <li>🔒 Data in %APPDATA%</li>
+        </ul>
+      </aside>
+      <div class="right">
+        <h4>What it sees — and doesn't.</h4>
+        <div class="chk">
+          <div>App executable &amp; name</div><div class="no">Window titles</div>
+          <div>Start &amp; end times</div><div class="no">URLs &amp; documents</div>
+          <div>Idle / lock state</div><div class="no">Keystrokes &amp; mouse</div>
+          <div>Your categories</div><div class="no">Screenshots</div>
+        </div>
+        <div class="row"><a class="pill dark" href="#download">Download installer</a><a class="pill outline" href="#download">Build from source</a></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer data-clouds="scatter">
+  <div class="ghost">Dayframe</div>
+  <div class="fcard">
+    <div class="top">
+      <div>
+        <b>Dayframe.</b>
+        <div class="tag">See where<br>your day went</div>
+        <small>Privacy first:</small>
+        <div class="mail">Everything stays on your PC.</div>
+      </div>
+      <nav><a href="#tour">Tour</a><a href="#screens">Screens</a><a href="#features">Features</a><a href="#day">Your day</a></nav>
+    </div>
+    <div class="bot"><span>© 2026 Dayframe · v<span data-version></span></span>
+      <a href="#top" aria-label="Back to top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg></a></div>
+  </div>
+</footer>
+
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>

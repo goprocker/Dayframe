@@ -1,0 +1,82 @@
+/*
+ * Cumulus clouds (built in src/clouds.js).
+ *   .c-haze  faint wide glow around the cloud
+ *   .c-body  shade puffs + lit puffs, edges roughened by #cloud-edge
+ *   i.s      shadowed underside puffs (cool grey-blue)
+ *   i.l      sunlit puffs (white core, soft falloff)
+ */
+.cloud {
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+  animation: cloud-drift var(--drift, 60s) ease-in-out infinite alternate;
+}
+.cloud .c-haze {
+  position: absolute;
+  inset: 10% -12% 0;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 50% 70%, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0) 65%);
+  filter: blur(18px);
+}
+.cloud .c-body {
+  position: absolute;
+  left: 0;
+  right: 0;
+  filter: url(#cloud-edge);
+  /* keeps each cloud in its own bounded paint layer; Chrome can drop the
+     whole page's paint when many unbounded SVG-filtered layers overlap */
+  clip-path: inset(-10% -12% -14% -12%);
+}
+.cloud .c-body i {
+  position: absolute;
+  border-radius: 50%;
+}
+.cloud i.s {
+  background: radial-gradient(circle at 50% 40%, #c3d1de 0%, #aebfcf 55%, rgba(158, 178, 198, 0.9) 70%, rgba(158, 178, 198, 0) 72%);
+}
+.cloud i.l {
+  background: radial-gradient(circle at 42% 34%, #ffffff 0%, #fbfdff 32%, #e6eef5 58%, rgba(214, 226, 236, 0.95) 68%, rgba(214, 226, 236, 0) 71%);
+}
+
+/* distant clouds: smaller contrast, hazier */
+.cloud.far { opacity: 0.75; }
+.cloud.far .c-body { filter: url(#cloud-edge) blur(2.5px); }
+.cloud.far i.s { background: radial-gradient(circle at 50% 40%, #d3dee8 0%, #c2d0dd 60%, rgba(194, 208, 221, 0) 71%); }
+
+/* hanging clouds (under a light section): mirror vertically */
+.cloud.flip { transform: scaleY(-1); }
+/* their "underside" faces the white section above, so keep it light */
+.cloud-band .cloud i.s, .cloud.flip i.s { background: radial-gradient(circle at 50% 40%, #eef2f6 0%, #e3eaf0 60%, rgba(227, 234, 240, 0) 71%); }
+
+@keyframes cloud-drift {
+  from { translate: calc(var(--dx, 40px) * -1) 0; }
+  to   { translate: var(--dx, 40px) 0; }
+}
+
+/*
+ * Cloud bands between sections. A solid fill covers the light side so
+ * the bank melts into it; clouds sit across the seam.
+ */
+.cloud-band {
+  position: relative;
+  z-index: 3;
+  height: 280px;
+  margin: -150px 0 -130px;
+  pointer-events: none;
+}
+.cloud-band::before {
+  content: "";
+  position: absolute;
+  left: 0; right: 0;
+  bottom: 0;
+  height: 55%;
+  background: linear-gradient(180deg, rgba(244, 246, 248, 0), var(--paper) 45%);
+}
+.cloud-band.flip::before { top: 0; bottom: auto; background: linear-gradient(0deg, rgba(230, 238, 244, 0), #e6eef4 45%); }
+.cloud-band .cloud { animation-duration: var(--drift, 90s); }
+.cloud-band .cloud i.l {
+  background: radial-gradient(circle at 45% 35%, #ffffff 0%, #fbfcfd 40%, #edf2f6 62%, rgba(237, 242, 246, 0.95) 68%, rgba(237, 242, 246, 0) 71%);
+}
+.cloud-band.flip .cloud i.l {
+  background: radial-gradient(circle at 45% 35%, #ffffff 0%, #f3f7fa 45%, #e6eef4 64%, rgba(230, 238, 244, 0) 71%);
+}

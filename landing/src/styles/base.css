@@ -1,0 +1,103 @@
+:root {
+  --sky-top: #0e4675;
+  --sky-mid: #3f7fa8;
+  --sky-low: #8db3cc;
+  --dusk: #e9c9a6;
+  --paper: #f4f6f8;
+  --ink: #262c34;
+  --soft: rgba(255, 255, 255, 0.86);
+  --glass: rgba(255, 255, 255, 0.14);
+  --glass-b: rgba(255, 255, 255, 0.38);
+  --accent: #7c8cff;
+  --gutter: clamp(16px, 6vw, 80px);
+  --serif: "Instrument Serif", Georgia, serif;
+  --sans: "DM Sans", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--sans);
+  color: #fff;
+  background: var(--sky-top);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; text-decoration: none; }
+img { display: block; max-width: 100%; }
+
+/* film grain over everything */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 100;
+  opacity: 0.13;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ---------- loader ---------- */
+#loader {
+  position: fixed; inset: 0; z-index: 200;
+  background: linear-gradient(180deg, var(--sky-top), var(--sky-mid) 60%, var(--dusk));
+  display: flex; flex-direction: column; justify-content: space-between;
+  padding: clamp(16px, 3vw, 64px);
+  transition: opacity 0.7s ease, visibility 0.7s;
+}
+#loader.done { opacity: 0; visibility: hidden; }
+#loader .bar { margin-top: 30vh; height: 2px; background: rgba(255, 255, 255, 0.25); width: min(1040px, 100%); }
+#loader .bar i { display: block; height: 100%; width: 0; background: #fff; transition: width 0.15s linear; }
+#loader .row { display: flex; justify-content: space-between; align-items: flex-end; }
+#loader .brand { font-family: var(--serif); font-size: 20px; }
+#loader .pct { font-family: var(--serif); font-size: clamp(96px, 16vw, 200px); line-height: 0.8; letter-spacing: -0.04em; }
+#loader .pct small { font-size: 0.22em; letter-spacing: 0; }
+
+/* ---------- nav ---------- */
+.logo {
+  position: fixed; top: 24px; left: var(--gutter); z-index: 50;
+  background: rgba(40, 46, 56, 0.55); backdrop-filter: blur(10px);
+  font-size: 12px; font-weight: 700; letter-spacing: 0.02em;
+  padding: 10px 12px; border-radius: 6px; text-transform: uppercase;
+}
+.nav {
+  position: fixed; top: 14px; right: var(--gutter); z-index: 50;
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 6px 6px 18px; border-radius: 14px;
+  background: rgba(40, 46, 56, 0.32);
+  backdrop-filter: blur(18px) saturate(1.4);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+.nav a.l { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; padding: 10px 14px; opacity: 0.9; }
+.nav a.l:hover { opacity: 1; }
+@media (max-width: 760px) { .nav a.l { display: none; } .nav { padding: 6px; } }
+
+.pill {
+  display: inline-flex; align-items: center; justify-content: center;
+  font-weight: 600; font-size: 14px; color: var(--ink); background: #fff;
+  padding: 13px 22px; border-radius: 999px;
+  box-shadow: inset 0 -3px 8px rgba(0, 0, 0, 0.12), 0 4px 18px rgba(0, 0, 0, 0.18);
+  transition: transform 0.2s;
+}
+.pill:hover { transform: translateY(-2px); }
+.pill.dark { background: #111; color: #fff; box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.7), 0 4px 18px rgba(0, 0, 0, 0.3); }
+.pill.outline { box-shadow: inset 0 0 0 1px #d6dae0; }
+
+/* ---------- shared section bits ---------- */
+section { position: relative; padding: 120px var(--gutter); overflow: hidden; }
+section > *:not(.cloud) { position: relative; z-index: 2; }
+.head { text-align: center; margin-bottom: 56px; }
+.head h2 { font-family: var(--serif); font-weight: 400; font-size: clamp(46px, 6vw, 74px); line-height: 1; letter-spacing: -0.05em; }
+.head h2 em { font-style: italic; }
+.head p { margin-top: 14px; font-size: 18px; font-weight: 500; letter-spacing: -0.01em; color: rgba(232, 236, 240, 0.9); }
+.center { text-align: center; margin-top: 48px; }
+
+/* scroll reveal */
+.rv { opacity: 0; translate: 0 30px; transition: opacity 0.9s ease, translate 0.9s cubic-bezier(0.2, 0.7, 0.2, 1), transform 0.35s; }
+.rv.in { opacity: 1; translate: 0 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+  .rv { opacity: 1; translate: 0 0; }
+}

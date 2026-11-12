@@ -27,7 +27,7 @@ Data lives in `%APPDATA%\com.dayframe.app\dayframe.db`. There is no network code
 
 ## Install
 
-Download the `Dayframe_<version>_x64-setup.exe` installer from Releases and run it. The installer is per-user and does not need administrator rights. WebView2 is required (preinstalled on Windows 10/11; the installer fetches it if missing).
+Download the `Dayframe_<version>_x64-setup.exe` installer from the landing page or Releases and run it. The installer is per-user and does not need administrator rights. WebView2 is required (preinstalled on Windows 10/11; the installer fetches it if missing).
 
 ## Build from source
 
@@ -55,9 +55,23 @@ npx vitest run               # frontend time helpers
 - Fullscreen detection compares the foreground window with its monitor; borderless windows that exactly cover a monitor also count as fullscreen.
 - Projects exist in the database schema but there is no UI to assign them yet.
 
-## Architecture
+If port 1420 is already in use, an old Vite dev server is still running; see [Troubleshooting](https://github.com/goprocker/Dayframe/wiki/Troubleshooting).
 
-See [ARCHITECTURE.md](ARCHITECTURE.md).
+## Landing page
+
+The marketing site is in [`landing/`](landing/) (Vite, plain HTML/CSS/JS, deployable to Vercel). It hosts the installer download, a product video and a changelog page.
+
+```sh
+cd landing && npm install && npm run dev   # http://localhost:5180
+```
+
+See [landing/README.md](landing/README.md) and [landing/CHANGELOG.md](landing/CHANGELOG.md).
+
+## Documentation
+
+- [Wiki](https://github.com/goprocker/Dayframe/wiki): installation, usage, privacy, building, architecture, landing page, troubleshooting.
+- [ARCHITECTURE.md](ARCHITECTURE.md): technical design.
+- [Dayframe-Guide.pdf](Dayframe-Guide.pdf): illustrated project guide.
 
 ## Tech
 

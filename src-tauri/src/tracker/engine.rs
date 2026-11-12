@@ -97,6 +97,12 @@ impl Engine {
         }
     }
 
+    /// Drop the open session without emitting a Close, e.g. after its row was
+    /// deleted. The next active tick opens a fresh session.
+    pub fn forget(&mut self) {
+        self.current = None;
+    }
+
     /// Close any open session immediately (pause, quit, settings change).
     pub fn flush(&mut self, now_ms: i64) -> Vec<Action> {
         let mut out = Vec::new();

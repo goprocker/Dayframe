@@ -27,6 +27,9 @@ pub struct Control {
     /// Settings or exclusions changed: reload them on the next tick.
     pub reload: AtomicBool,
     pub stop: AtomicBool,
+    /// Set while holding the DB lock after tracked rows were deleted: the open
+    /// session row may be gone, so drop it instead of extending it.
+    pub reopen: AtomicBool,
     pub snapshot: Mutex<Snapshot>,
 }
 
@@ -134,8 +137,15 @@ fn run(app: AppHandle, ctl: Arc<Control>) {
             engine.tick(&sample)
         };
 
-        if !actions.is_empty() {
+        if !actions.is_empty() || ctl.reopen.load(Ordering::SeqCst) {
             if let Ok(conn) = state.db.lock() {
+                // Checked under the lock so no write can land between a
+                // delete and this reset.
+                if ctl.reopen.swap(false, Ordering::SeqCst) {
+                    writer.session_id = None;
+                    writer.app_name = None;
+                    engine.forget();
+                }
                 writer.apply(&conn, actions);
             }
         }

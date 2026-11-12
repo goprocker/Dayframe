@@ -1,5 +1,7 @@
 mod categories;
 mod db;
+mod icons;
+mod stats;
 mod tracker;
 
 use std::sync::atomic::Ordering;
@@ -50,6 +52,58 @@ fn set_tracking_consent(state: tauri::State<'_, AppState>, consented: bool) -> R
 }
 
 #[tauri::command]
+fn day_summary(
+    state: tauri::State<'_, AppState>,
+    from: i64,
+    to: i64,
+) -> Result<stats::DaySummary, String> {
+    if to <= from || to - from > 26 * 3_600_000 {
+        return Err("invalid day range".into());
+    }
+    let conn = state.db.lock().map_err(|e| e.to_string())?;
+    stats::day_summary(&conn, from, to).map_err(|e| e.to_string())
+}
+
+/// Totals for consecutive ranges, e.g. 8 local midnights → 7 day totals.
+#[tauri::command]
+fn range_totals(state: tauri::State<'_, AppState>, bounds: Vec<i64>) -> Result<Vec<i64>, String> {
+    if bounds.len() > 400 || bounds.windows(2).any(|w| w[1] <= w[0]) {
+        return Err("invalid bounds".into());
+    }
+    let conn = state.db.lock().map_err(|e| e.to_string())?;
+    stats::range_totals(&conn, &bounds).map_err(|e| e.to_string())
+}
+
+/// Icons as base64 PNG keyed by app id. Missing icons are extracted first
+/// (outside the DB lock) and cached.
+#[tauri::command]
+fn app_icons(
+    state: tauri::State<'_, AppState>,
+) -> Result<std::collections::HashMap<i64, String>, String> {
+    use base64::Engine as _;
+    let missing = {
+        let conn = state.db.lock().map_err(|e| e.to_string())?;
+        db::apps_without_icon(&conn).map_err(|e| e.to_string())?
+    };
+    if !missing.is_empty() {
+        let extracted: Vec<(i64, Vec<u8>)> = missing
+            .into_iter()
+            .map(|(id, path)| (id, icons::extract_png(&path).unwrap_or_default()))
+            .collect();
+        let conn = state.db.lock().map_err(|e| e.to_string())?;
+        for (id, png) in extracted {
+            db::set_app_icon(&conn, id, &png).map_err(|e| e.to_string())?;
+        }
+    }
+    let conn = state.db.lock().map_err(|e| e.to_string())?;
+    Ok(db::app_icons(&conn)
+        .map_err(|e| e.to_string())?
+        .into_iter()
+        .map(|(id, png)| (id, base64::engine::general_purpose::STANDARD.encode(png)))
+        .collect())
+}
+
+#[tauri::command]
 fn set_tracking_paused(state: tauri::State<'_, AppState>, paused: bool) {
     state.tracker.paused.store(paused, Ordering::SeqCst);
 }
@@ -77,7 +131,10 @@ pub fn run() {
             app_info,
             tracker_state,
             set_tracking_consent,
-            set_tracking_paused
+            set_tracking_paused,
+            day_summary,
+            range_totals,
+            app_icons
         ])
         .build(tauri::generate_context!())
         .expect("error while building Dayframe");

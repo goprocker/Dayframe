@@ -176,6 +176,32 @@ pub fn set_app_category(conn: &Connection, id: i64, category: &str) -> Result<()
     Ok(())
 }
 
+/// `(id, executable_path)` of apps whose icon has not been extracted yet.
+pub fn apps_without_icon(conn: &Connection) -> Result<Vec<(i64, String)>> {
+    let mut st =
+        conn.prepare("SELECT id, executable_path FROM applications WHERE icon_png IS NULL")?;
+    let rows = st.query_map([], |r| Ok((r.get(0)?, r.get(1)?)))?;
+    rows.collect()
+}
+
+/// Store an icon; an empty blob records that none could be extracted.
+pub fn set_app_icon(conn: &Connection, id: i64, png: &[u8]) -> Result<()> {
+    conn.execute(
+        "UPDATE applications SET icon_png = ?2 WHERE id = ?1",
+        params![id, png],
+    )?;
+    Ok(())
+}
+
+/// Non-empty cached icons as `(id, png)`.
+pub fn app_icons(conn: &Connection) -> Result<Vec<(i64, Vec<u8>)>> {
+    let mut st = conn.prepare(
+        "SELECT id, icon_png FROM applications WHERE length(icon_png) > 0",
+    )?;
+    let rows = st.query_map([], |r| Ok((r.get(0)?, r.get(1)?)))?;
+    rows.collect()
+}
+
 // -------------------------------------------------------------------- sessions
 
 pub fn open_session(conn: &Connection, app_id: i64, start_ms: i64) -> Result<i64> {

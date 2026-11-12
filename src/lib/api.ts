@@ -58,6 +58,23 @@ export const stats = {
   rangeTotals: (bounds: number[]) =>
     invoke<number[]>("range_totals", { bounds }),
   icons: () => invoke<Record<string, string>>("app_icons"),
+  range: (bounds: number[]) => invoke<RangeSummary>("range_summary", { bounds }),
+};
+
+export interface RangeSummary {
+  totalSeconds: number;
+  activeDays: number;
+  days: { from: number; totalSeconds: number; categories: Record<string, number> }[];
+  categories: { name: string; seconds: number }[];
+  apps: AppUsage[];
+  hourOfDay: number[];
+}
+
+export const widget = {
+  setEnabled: (enabled: boolean) => invoke<void>("set_widget_enabled", { enabled }),
+  setExpanded: (expanded: boolean) => invoke<void>("set_widget_expanded", { expanded }),
+  savePosition: (x: number, y: number) => invoke<void>("save_widget_position", { x, y }),
+  openDashboard: () => invoke<void>("open_dashboard"),
 };
 
 export type Theme = "system" | "dark" | "light";
@@ -67,6 +84,7 @@ export interface Settings {
   theme: Theme;
   idleThresholdMinutes: number;
   autostart: boolean;
+  widget: boolean;
   dataDir: string;
   version: string;
   categories: string[];
@@ -96,6 +114,8 @@ export const settings = {
   deleteRange: (from: number, to: number) =>
     invoke<void>("delete_range", { from, to }),
   deleteAll: () => invoke<void>("delete_all_data"),
+  onTheme: (cb: (theme: Theme) => void): Promise<UnlistenFn> =>
+    listen<Theme>("theme", (e) => cb(e.payload)),
   onNavigate: (cb: (view: string) => void): Promise<UnlistenFn> =>
     listen<string>("navigate", (e) => cb(e.payload)),
 };

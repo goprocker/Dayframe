@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import {
+  BarChart3,
   ChevronLeft,
   ChevronRight,
   Clock,
@@ -36,7 +37,13 @@ const STATUS_LABEL: Record<string, string> = {
   unknown: "Waiting",
 };
 
-export function Dashboard({ onOpenSettings }: { onOpenSettings: () => void }) {
+export function Dashboard({
+  onOpenSettings,
+  onOpenAnalytics,
+}: {
+  onOpenSettings: () => void;
+  onOpenAnalytics: () => void;
+}) {
   const [date, setDate] = useState(() => startOfDay(new Date()));
   const [day, setDay] = useState<DaySummary | null>(null);
   const [week, setWeek] = useState<number[]>([]);
@@ -146,6 +153,9 @@ export function Dashboard({ onOpenSettings }: { onOpenSettings: () => void }) {
             )}
           </div>
           <TrackerPill tracker={tracker} />
+          <IconBtn label="Analytics" onClick={onOpenAnalytics}>
+            <BarChart3 size={16} />
+          </IconBtn>
           <IconBtn label="Settings" onClick={onOpenSettings}>
             <SettingsIcon size={16} />
           </IconBtn>

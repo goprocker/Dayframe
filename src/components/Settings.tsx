@@ -5,6 +5,7 @@ import {
   api,
   applyTheme,
   settings as sapi,
+  widget,
   type AppRow,
   type Settings as SettingsData,
   type Theme,
@@ -95,6 +96,20 @@ export function Settings({
                 </option>
               ))}
             </select>
+          </Row>
+          <Row
+            label="Floating widget"
+            hint="A small always-on-top pill with the current app and session time. Hidden while a fullscreen app is in front."
+          >
+            <Toggle
+              checked={s.widget}
+              onChange={(v) =>
+                run(async () => {
+                  await widget.setEnabled(v);
+                  setS({ ...s, widget: v });
+                })
+              }
+            />
           </Row>
           <Row label="Start with Windows" hint="Starts minimized to the tray.">
             <Toggle

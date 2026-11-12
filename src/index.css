@@ -43,3 +43,11 @@ body {
   -webkit-font-smoothing: antialiased;
   user-select: none;
 }
+
+/* The widget window is transparent; only its pill is painted. */
+html.widget,
+html.widget body,
+html.widget #root {
+  background: transparent;
+  overflow: hidden;
+}

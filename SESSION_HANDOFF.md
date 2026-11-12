@@ -1,6 +1,6 @@
 # Dayframe — Session Handoff
 
-_Last updated: 2026-11-12 · end of Chunk 4 (tray, onboarding, settings)_
+_Last updated: 2026-11-12 · end of Chunk 5 (widget, analytics)_
 
 Dayframe is a privacy-first Windows desktop time tracker: Tauri 2 + React/TypeScript + Rust + SQLite. Tagline: **See where your day went.**
 
@@ -14,8 +14,8 @@ Repo: https://github.com/goprocker/Dayframe
 | 2 | Real Windows tracking (Win32 sampler + background thread) | **Done** (verified below) |
 | 3 | Dashboard on real data (stats, icons, timeline) | **Done** (verified below) |
 | 4 | Tray, onboarding + consent, settings | **Done** (verified below) |
-| 5 | Floating widget, analytics charts | Next |
-| 6 | Release: perf measurement, NSIS installer, README/ARCHITECTURE | Not started |
+| 5 | Floating widget, analytics charts | **Done** (verified below) |
+| 6 | Release: perf measurement, NSIS installer, README/ARCHITECTURE | Next |
 
 Full plan: see "Chunks" below.
 
@@ -101,8 +101,20 @@ Pure, no I/O. Input `Sample { now_ms, app, idle_ms, locked }` each tick → outp
 - Gotcha: killing a dev run can leave `msedgewebview2.exe` holding the data folder → next launch panics with WebView2 `0x800700AA`. Kill those processes before relaunching.
 - **Not yet verified by hand:** tray menu clicks, close-to-tray, autostart toggle, second-instance focus, onboarding → dashboard flow, delete range/all, light theme.
 
-## Next steps (Chunk 5)
-Widget window + analytics (see below).
+## Chunk 5 — what was added
+- `widget.rs`: `widget` window built on demand (transparent, undecorated, no shadow, always-on-top, skip taskbar, 248×44 collapsed / 280×236 expanded). Saved position (`widget_position`, physical px) reused only if it is on a connected monitor, else top-right of primary. `widget_enabled` setting; `apply()` shows only when enabled and no fullscreen app is in front. Commands `set_widget_enabled` (async: window creation from a sync command deadlocks on Windows), `set_widget_expanded`, `save_widget_position`, `open_dashboard`.
+- `win.rs::foreground_is_fullscreen`: foreground rect covers its monitor; desktop/shell (`Progman`, `WorkerW`) excluded. Sampled in the tracker loop only while the widget is enabled.
+- Tray gets Show/Hide widget; Settings gets a widget toggle. `set_theme` emits `theme` so both windows follow.
+- `stats::summarize_range` + `range_summary(bounds)` (≤ 92 days): per-day category totals, category/app totals, hour-of-day via `chrono::Local` (DST-correct).
+- UI: `main.tsx` picks root by window label (widget vs app). `Widget.tsx` (drag via `startDragging`, live h:mm:ss counter only while active, today + top 3 when expanded, debounced position save). `Analytics.tsx` (7/14/30 days: tiles, stacked daily bars by category, category donut, average-by-hour, top 10 apps) lazy-loaded so Recharts (~112 KB gz) stays out of the dashboard/widget bundles. Capability adds `widget` window + `core:window:allow-start-dragging`.
+
+## Verification done (Chunk 5)
+- `cargo test`: **30 passed** (range merge, local-hour mapping, position parsing).
+- `npm run build` + `npx vitest run` (3) pass. `npm run tauri dev` launches, ~32 MB, no panics.
+- **Not yet verified by hand:** widget (off by default — turn on in tray/Settings): drag + position restore, expand/collapse, hide on fullscreen video/game, transparency corners; analytics charts with real data in both themes; tray widget label.
+
+## Next steps (Chunk 6)
+Perf measurement, NSIS build, README + ARCHITECTURE (see below).
 
 ## Remaining chunks
 - **3** `stats.rs` (day summary, switches, longest session, hourly, 7-day; tests incl. midnight), `icons.rs` (ExtractIconEx → PNG cached in DB), dashboard UI: overview tiles, app list with icons/bars, day timeline with hover, date picker, empty state. Refresh only while visible.

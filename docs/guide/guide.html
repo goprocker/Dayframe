@@ -112,14 +112,14 @@ td code { background: transparent; padding: 0; }
 <section class="page">
   <div class="kick">CONTENTS</div>
   <h1>Inside this guide</h1>
-  <div class="toc toc2" style="grid-auto-flow:column;grid-template-rows:repeat(10,auto)">
+  <div class="toc toc2" style="grid-auto-flow:column;grid-template-rows:repeat(11,auto)">
     <div><b>01</b>Why Dayframe exists</div><div><b>02</b>Every feature</div><div><b>03</b>How it looks</div>
     <div><b>04</b>Tech stack</div><div><b>05</b>Architecture</div><div><b>06</b>How tracking works</div>
     <div><b>07</b>Data model and time</div><div><b>08</b>Repository map</div><div><b>09</b>Install and run</div>
     <div><b>10</b>Using Dayframe</div><div><b>11</b>Settings</div><div><b>12</b>Build, test, debug</div>
     <div><b>13</b>Privacy, troubleshooting, uninstall</div><div><b>14</b>Dayframe in plain English</div>
     <div><b>15</b>Words you need</div><div><b>16</b>Follow the data</div><div><b>17</b>Engineering ideas it shows</div>
-    <div><b>18</b>Hard problems and limits</div><div><b>19</b>Interview questions and answers</div><div><b>20</b>Cheat sheet</div>
+    <div><b>18</b>Hard problems and limits</div><div><b>19</b>Interview questions and answers</div><div><b>20</b>Cheat sheet</div><div><b>21</b>Website and wiki</div>
   </div>
   <div class="stats">
     <div><b>1 s</b><small>sampling interval</small></div><div><b>30 s</b><small>max data lost on a crash</small></div>
@@ -715,6 +715,29 @@ cd src-tauri &amp;&amp; cargo test</pre>
       </ol>
     </div>
   </div>
+  <div class="foot"><span>Dayframe · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<!-- ============ 21 ============ -->
+<section class="page">
+  <div class="kick">SECTION 21</div>
+  <h1>Website and wiki</h1>
+  <div class="lead">Dayframe has a public landing page at <b>dayframe.loopfound.in</b> and a wiki on GitHub. Both live next to the app but are built separately.</div>
+  <h2>The landing page</h2>
+  <p class="small">Plain HTML, CSS and JavaScript in <code>landing/</code>, built with Vite and hosted on Vercel. It has its own version (0.9.0) and changelog, separate from the app.</p>
+  <div class="grid2">
+    <div class="card"><h3>What's on it</h3>An intro loader that fills a 24-hour timeline, a painted meadow hero with a retro TV playing the product video, a scroll-driven tour, the "A day, framed" story, screenshots and the installer download.</div>
+    <div class="card"><h3>Changelog page</h3>A second page at <code>/changelog</code> lists every landing release. Vite builds it as a second entry next to <code>index.html</code>.</div>
+    <div class="card"><h3>Downloads</h3>The installer is served from <code>/download/</code> as a file download. Clicks add one to an anonymous public counter. Localhost and the owner's browsers (<code>?me=1</code>) are not counted.</div>
+    <div class="card"><h3>Deploy</h3>The Vercel project's root directory is <code>landing</code>. <code>vercel.json</code> sets the build, clean URLs and download headers.</div>
+  </div>
+  <h2>Commands</h2>
+<pre class="t">cd landing
+npm install
+npm run dev      # http://localhost:5180
+npm run build    # landing/dist</pre>
+  <h2>The wiki</h2>
+  <p class="small">github.com/goprocker/Dayframe/wiki has short pages for Installation, Using Dayframe, Privacy, Building from Source, Architecture, Landing Page and Troubleshooting. Use it as the quick reference; this guide is the long version.</p>
   <div class="foot"><span>Dayframe · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
 </section>
 

@@ -1,6 +1,6 @@
 # Dayframe — Session Handoff
 
-_Last updated: 2026-11-12 · end of Chunk 1 (Foundation), repo published_
+_Last updated: 2026-11-12 · end of Chunk 2 (real tracking)_
 
 Dayframe is a privacy-first Windows desktop time tracker: Tauri 2 + React/TypeScript + Rust + SQLite. Tagline: **See where your day went.**
 
@@ -11,8 +11,8 @@ Repo: https://github.com/goprocker/Dayframe
 | Chunk | Scope | State |
 |---|---|---|
 | 1 | Foundation: scaffold, SQLite schema, tracking engine, app shell | **Done** (verified below) |
-| 2 | Real Windows tracking (Win32 sampler + background thread) | Next |
-| 3 | Dashboard on real data (stats, icons, timeline) | Not started |
+| 2 | Real Windows tracking (Win32 sampler + background thread) | **Done** (verified below) |
+| 3 | Dashboard on real data (stats, icons, timeline) | Next |
 | 4 | Tray, onboarding + consent, settings | Not started |
 | 5 | Floating widget, analytics charts | Not started |
 | 6 | Release: perf measurement, NSIS installer, README/ARCHITECTURE | Not started |
@@ -64,12 +64,21 @@ Pure, no I/O. Input `Sample { now_ms, app, idle_ms, locked }` each tick → outp
 - **Not yet verified:** `npm run tauri dev` launching the window (run was interrupted). Do this first next session.
 - Expected warnings: dead-code warnings for db/engine functions not wired up until Chunk 2.
 
-## Next steps (Chunk 2 — real tracking)
-1. Run `npm run tauri dev`; confirm window shows "v0.1.0 · database schema v1" and DB file is created.
-2. `tracker/win.rs`: `GetForegroundWindow` → `GetWindowThreadProcessId` → `OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION)` → `QueryFullProcessImageNameW`; display name from version info `FileDescription`, fallback exe stem; inaccessible process → "Protected application". `GetLastInputInfo` for idle. Lock via `OpenInputDesktop` failing / non-"Default" desktop. Fullscreen check (for widget later).
-3. `tracker/mod.rs`: 1 s thread, apply engine actions to DB (`upsert_app`, `open_session`, `set_session_end`), emit `tracker://state` event, flush on quit.
-4. Tracking stays off until onboarding consent (`settings.tracking_consented = "1"`). For Chunk 2 testing, add a temporary enable path.
-5. Verify with real apps; measure CPU/RAM in Task Manager.
+## Chunk 2 — what was added
+- `tracker/win.rs`: foreground exe via `GetForegroundWindow` → `OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION)` → `QueryFullProcessImageNameW`; display name from version `FileDescription` (cached), fallback exe stem; inaccessible → key `::protected`, "Protected application". Idle via `GetLastInputInfo`/`GetTickCount` (wrap-safe). Locked = `OpenInputDesktop` fails or desktop name ≠ "Default".
+- `tracker/mod.rs`: `Control` (atomics: consented, paused, reload, stop + last `Snapshot`), 1 s thread applying engine actions to DB, emits `tracker://state` only on change. Settings read: `idle_threshold_ms` (≥ 60 s), excluded apps; set `reload` to re-read.
+- `lib.rs`: commands `tracker_state`, `set_tracking_consent` (persists `tracking_consented`), `set_tracking_paused`; on `RunEvent::Exit` sets stop and joins the thread → open session flushed.
+- Shell UI: temporary "Enable tracking (dev)" / Pause toggle + live status. Remove when onboarding lands (chunk 4).
+- Fullscreen detection deferred to chunk 5 (widget).
+
+## Verification done (Chunk 2)
+- `cargo test`: **20 passed** (3 new in `win.rs`: stem fallback, notepad FileDescription, idle ≥ 0).
+- `npm run build` passes. `npm run tauri dev` launches; DB created in `%APPDATA%\com.dayframe.app`.
+- **Not yet verified:** clicking Enable and watching sessions land for real apps; CPU/RAM measurement (do at start of chunk 3).
+
+## Next steps (Chunk 3)
+1. Manually verify tracking with real apps (enable via shell button).
+2. `stats.rs`, `icons.rs`, dashboard UI (see below).
 
 ## Remaining chunks
 - **3** `stats.rs` (day summary, switches, longest session, hourly, 7-day; tests incl. midnight), `icons.rs` (ExtractIconEx → PNG cached in DB), dashboard UI: overview tiles, app list with icons/bars, day timeline with hover, date picker, empty state. Refresh only while visible.

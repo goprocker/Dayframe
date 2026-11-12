@@ -1,6 +1,6 @@
 # Dayframe — Session Handoff
 
-_Last updated: 2026-11-12 · end of Chunk 2 (real tracking)_
+_Last updated: 2026-11-12 · end of Chunk 3 (dashboard)_
 
 Dayframe is a privacy-first Windows desktop time tracker: Tauri 2 + React/TypeScript + Rust + SQLite. Tagline: **See where your day went.**
 
@@ -12,8 +12,8 @@ Repo: https://github.com/goprocker/Dayframe
 |---|---|---|
 | 1 | Foundation: scaffold, SQLite schema, tracking engine, app shell | **Done** (verified below) |
 | 2 | Real Windows tracking (Win32 sampler + background thread) | **Done** (verified below) |
-| 3 | Dashboard on real data (stats, icons, timeline) | Next |
-| 4 | Tray, onboarding + consent, settings | Not started |
+| 3 | Dashboard on real data (stats, icons, timeline) | **Done** (verified below) |
+| 4 | Tray, onboarding + consent, settings | Next |
 | 5 | Floating widget, analytics charts | Not started |
 | 6 | Release: perf measurement, NSIS installer, README/ARCHITECTURE | Not started |
 
@@ -76,9 +76,19 @@ Pure, no I/O. Input `Sample { now_ms, app, idle_ms, locked }` each tick → outp
 - `npm run build` passes. `npm run tauri dev` launches; DB created in `%APPDATA%\com.dayframe.app`.
 - **Not yet verified:** clicking Enable and watching sessions land for real apps; CPU/RAM measurement (do at start of chunk 3).
 
-## Next steps (Chunk 3)
-1. Manually verify tracking with real apps (enable via shell button).
-2. `stats.rs`, `icons.rs`, dashboard UI (see below).
+## Chunk 3 — what was added
+- `stats.rs`: pure `summarize()` → total, per-app usage (seconds, sessions), switches, longest merged block, hourly buckets, timeline (same-app blocks merged when gap ≤ 2 s). Caller passes local-midnight bounds; bucket count = range hours (23/25 on DST days). `range_totals(bounds)` for the 7-day strip.
+- `icons.rs`: `ExtractIconExW` → `GetIconInfo`/`GetDIBits` → RGBA PNG; cached in `applications.icon_png` (empty blob = none, not retried).
+- Commands: `day_summary(from,to)` (≤ 26 h), `range_totals(bounds)`, `app_icons` (base64 by app id; extraction outside DB lock).
+- UI: `components/Dashboard.tsx` (header with date nav/picker + tracker pill with pause and temporary enable, tiles, timeline, app list with icons/bars, hourly bars, clickable 7-day strip, empty states), `Timeline.tsx` (hover detail), `AppIcon.tsx`; `lib/time.ts` (local-day bounds, formatting) with vitest tests; `lib/colors.ts`. Today refreshes every 30 s only while visible.
+
+## Verification done (Chunk 3)
+- `cargo test`: **27 passed** (stats incl. midnight split + DST bucket counts; notepad icon extraction).
+- `npx vitest run`: 3 passed. `npm run build` passes. `npm run tauri dev` launches without panics (~32 MB RAM).
+- **Not yet verified by eye:** dashboard with real tracked data, icon rendering, light theme. Do this first in chunk 4.
+
+## Next steps (Chunk 4)
+See below; also remove the temporary "Enable tracking (dev)" pill once onboarding exists.
 
 ## Remaining chunks
 - **3** `stats.rs` (day summary, switches, longest session, hourly, 7-day; tests incl. midnight), `icons.rs` (ExtractIconEx → PNG cached in DB), dashboard UI: overview tiles, app list with icons/bars, day timeline with hover, date picker, empty state. Refresh only while visible.

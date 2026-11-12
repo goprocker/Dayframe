@@ -6,7 +6,7 @@ import { initScroll } from "./scroll.js";
 import { initHero } from "./hero.js";
 import { initCursor } from "./cursor.js";
 import { initVideo } from "./video.js";
-import { initDownloads } from "./downloads.js";
+import { initDownloads, showDownloadCount } from "./downloads.js";
 
 // Version from package.json, injected by vite.config.js
 document.querySelectorAll("[data-version]").forEach((el) => (el.textContent = __APP_VERSION__));
@@ -70,6 +70,7 @@ initHero();
 initCursor();
 initVideo();
 initDownloads();
+showDownloadCount();
 
 // Reveal on scroll
 const io = new IntersectionObserver(

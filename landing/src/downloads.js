@@ -33,3 +33,21 @@ export function initDownloads() {
     })
   );
 }
+
+// Show the public download total wherever [data-downloads] appears.
+// Hidden until a count above zero arrives, so a failed fetch leaves no trace.
+export function showDownloadCount() {
+  const els = document.querySelectorAll("[data-downloads]");
+  if (!els.length) return;
+  fetch("https://abacus.jasoncameron.dev/get/dayframe-site/downloads")
+    .then((r) => (r.ok ? r.json() : null))
+    .then((d) => {
+      const n = d && Number(d.value);
+      if (!n) return;
+      els.forEach((el) => {
+        el.querySelector("span").textContent = n.toLocaleString();
+        el.hidden = false;
+      });
+    })
+    .catch(() => {});
+}

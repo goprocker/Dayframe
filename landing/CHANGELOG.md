@@ -2,6 +2,15 @@
 
 All notable changes to the Dayframe landing page. Versions follow [SemVer](https://semver.org/); bump `version` in `package.json` and add an entry here.
 
+## [1.0.0] — 2026-11-12
+
+### Added
+- Privacy and Terms pages, linked from the footer.
+- Download count in the Get started card, read from the public Abacus counter; hidden while the count is zero or unavailable.
+
+### Changed
+- Site version is now 1.0.0 to match the Dayframe 1.0.0 app release; installer links point to `Dayframe_1.0.0_x64-setup.exe`.
+
 ## [0.9.0] — 2026-11-12
 
 ### Changed

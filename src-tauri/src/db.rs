@@ -303,6 +303,7 @@ pub fn set_setting(conn: &Connection, key: &str, value: &str) -> Result<()> {
     Ok(())
 }
 
+#[cfg(test)]
 pub fn all_settings(conn: &Connection) -> Result<Vec<(String, String)>> {
     let mut st = conn.prepare("SELECT key, value FROM settings")?;
     let rows = st.query_map([], |r| Ok((r.get(0)?, r.get(1)?)))?;

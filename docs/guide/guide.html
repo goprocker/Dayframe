@@ -82,6 +82,7 @@ td code { background: transparent; padding: 0; }
 .lane i { position: absolute; top: 0; bottom: 0; }
 .lane s { position: absolute; top: -.6mm; bottom: -.6mm; width: .5mm; background: #16171d; text-decoration: none; }
 .legend { font-size: 7.5pt; color: #6b6d7a; margin-top: 2mm; }
+.shot { width: 100%; display: block; border-radius: 2mm; border: 1px solid #e3e4ea; }
 .tag { display: inline-block; font-size: 7pt; font-weight: 700; padding: .2mm 1.4mm; border-radius: 1mm; background: #4a5bdc; color: #fff; vertical-align: middle; }
 </style></head><body>
 
@@ -203,47 +204,31 @@ td code { background: transparent; padding: 0; }
 <section class="page">
   <div class="kick">SECTION 03</div>
   <h1>How it looks</h1>
-  <div class="lead">Faithful mock-ups built from the app's own design tokens (dark theme). The light theme swaps the same tokens.</div>
-  <div class="ui">
-    <div class="row"><b style="font-size:9pt">Dayframe</b><span style="margin-left:auto" class="muted">‹ 12/11/2026 ›</span><span class="pillw" style="padding:1mm 2.4mm"><span class="dotg" style="background:#34d399"></span>Tracking · Visual Studio Code</span></div>
-    <div style="font-size:12pt;font-weight:600;margin:2.5mm 0 1mm">Today</div>
-    <div class="row" style="gap:1.6mm">
-      <div class="tile"><span class="muted">Active time</span><b>6h 42m</b></div>
-      <div class="tile"><span class="muted">Apps used</span><b>11</b></div>
-      <div class="tile"><span class="muted">App switches</span><b>214</b></div>
-      <div class="tile"><span class="muted">Longest session</span><b>1h 18m</b><span class="muted">Visual Studio Code</span></div>
-    </div>
-    <div class="cardx"><div class="lbl">TIMELINE</div>
-      <div class="tl"><i style="width:6%"></i><i style="width:16%;background:#7c8cff"></i><i style="width:5%;background:#5fb3f4"></i><i style="width:4%;background:#4fc3a1"></i><i style="width:11%;background:#7c8cff"></i><i style="width:9%"></i><i style="width:7%;background:#e86f8f"></i><i style="width:14%;background:#7c8cff"></i><i style="width:6%;background:#5fb3f4"></i><i style="width:8%;background:#d6c35a"></i></div></div>
-    <div class="row" style="align-items:stretch;gap:2mm">
-      <div class="cardx" style="flex:3"><div class="lbl">APPLICATIONS</div>
-        <div class="row"><span class="ico" style="background:#7c8cff"></span><div style="flex:1"><div class="row" style="justify-content:space-between"><span>Visual Studio Code</span><span class="muted">3h 05m</span></div><div class="bar"><i style="width:100%;background:#7c8cff"></i></div></div></div>
-        <div class="row" style="margin-top:1.6mm"><span class="ico" style="background:#5fb3f4"></span><div style="flex:1"><div class="row" style="justify-content:space-between"><span>Google Chrome</span><span class="muted">1h 47m</span></div><div class="bar"><i style="width:58%;background:#5fb3f4"></i></div></div></div>
-        <div class="row" style="margin-top:1.6mm"><span class="ico" style="background:#4fc3a1"></span><div style="flex:1"><div class="row" style="justify-content:space-between"><span>Slack</span><span class="muted">52m</span></div><div class="bar"><i style="width:28%;background:#4fc3a1"></i></div></div></div>
-      </div>
-      <div class="cardx" style="flex:2"><div class="lbl">BY HOUR</div>
-        <div class="hb"><i style="height:4%;opacity:.2"></i><i style="height:4%;opacity:.2"></i><i style="height:40%"></i><i style="height:85%"></i><i style="height:95%"></i><i style="height:60%"></i><i style="height:30%"></i><i style="height:80%"></i><i style="height:100%"></i><i style="height:70%"></i><i style="height:45%"></i><i style="height:4%;opacity:.2"></i></div></div>
+  <div class="lead">Real screenshots of the app's own screens, rendered with sample data (a typical working day) so no personal history appears in this guide.</div>
+  <div style="display:grid;grid-template-columns:108mm 1fr;gap:6mm;align-items:start">
+    <div><img class="shot" src="img/dashboard.png"><p class="cap">Dashboard (dark): live tracker pill, four tiles, the day timeline, applications with their real icons, by-hour bars and the clickable 7-day strip.</p></div>
+    <div>
+      <img src="img/widget.png" style="width:100%">
+      <p class="cap">Widget, collapsed (248 × 44): status dot, current app, live session timer, pause, expand.</p>
+      <img src="img/widget-open.png" style="width:100%;margin-top:3mm">
+      <p class="cap">Widget, expanded (280 × 236): today's total and top three apps. Everything outside the card is transparent.</p>
+      <img src="img/widget-light.png" style="width:100%;margin-top:3mm">
+      <p class="cap">Widget in the light theme.</p>
     </div>
   </div>
-  <p class="cap">Dashboard: header with date navigation and the live tracker pill, four tiles, the day timeline, apps with icons and the by-hour chart.</p>
-  <h2>Widget states</h2>
-  <div class="grid3" style="gap:3mm;font-size:8pt;color:#6b6d7a">
-    <div><span class="pillw"><span class="dotg" style="background:#34d399"></span>Visual Studio Code <span style="color:#8b8d9c">24:07</span> ❚❚ ⌄</span><br><b style="color:#16171d">Tracking</b> · green dot, live timer.</div>
-    <div><span class="pillw"><span class="dotg" style="background:#fbbf24"></span>Paused ▶ ⌄</span><br><b style="color:#16171d">Paused</b> · amber dot, resume button.</div>
-    <div><span class="pillw"><span class="dotg" style="background:#71717a"></span>Idle ❚❚ ⌄</span><br><b style="color:#16171d">Idle / Locked</b> · grey dot, no timer.</div>
-  </div>
-  <div class="row" style="display:flex;gap:4mm;margin-top:4mm;align-items:flex-start">
-    <div class="ui" style="width:62mm;border-radius:4mm;padding:0;background:#15161c;border:1px solid #262833">
-      <div class="row" style="padding:2.4mm 3mm"><span class="dotg" style="background:#34d399"></span><span style="flex:1">Visual Studio Code</span><span class="muted">24:07</span> ❚❚ ⌃</div>
-      <div style="border-top:1px solid #262833;padding:2.5mm 3mm">
-        <div class="row" style="justify-content:space-between"><span class="muted">Today</span><b style="font-size:10pt">6h 42m</b></div>
-        <div class="row" style="margin-top:1mm"><span class="dotg" style="background:#7c8cff;border-radius:.4mm"></span><span style="flex:1">Visual Studio Code</span><span class="muted">3h 05m</span></div>
-        <div class="row"><span class="dotg" style="background:#5fb3f4;border-radius:.4mm"></span><span style="flex:1">Google Chrome</span><span class="muted">1h 47m</span></div>
-        <div class="row"><span class="dotg" style="background:#4fc3a1;border-radius:.4mm"></span><span style="flex:1">Slack</span><span class="muted">52m</span></div>
-        <div style="background:#1c1d25;text-align:center;border-radius:1.4mm;padding:1.2mm;margin-top:1.6mm">Open dashboard</div>
-      </div>
-    </div>
-    <div class="small" style="flex:1"><b>Expanded widget.</b> The window grows from 248 × 44 to 280 × 236 logical pixels. Today's totals are fetched only while expanded and refreshed every 30 s. The rest of the window is transparent, so only the rounded card is drawn.<br><br><b>Tray menu:</b> Open Dayframe · Pause tracking · Show widget · Settings · Quit Dayframe. The tooltip reads "Dayframe · tracking", "· paused" or "· tracking off".</div>
+  <h2>Tray menu</h2>
+  <p class="small">Open Dayframe · Pause tracking · Show widget · Settings · Quit Dayframe. The tooltip reads "Dayframe · tracking", "· paused" or "· tracking off". Left-click opens the dashboard.</p>
+  <div class="foot"><span>Dayframe · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<section class="page">
+  <div class="kick">SECTION 03 · CONTINUED</div>
+  <h1>Every screen</h1>
+  <div class="grid2" style="gap:5mm;align-items:start">
+    <div><img class="shot" src="img/analytics.png"><p class="cap">Analytics, 7 days: totals, stacked daily time by category, category donut, average by hour, top apps.</p></div>
+    <div><img class="shot" src="img/settings.png" style="height:84mm;object-fit:cover;object-position:top"><p class="cap">Settings: theme, idle threshold, widget, autostart, consent, and per-app category and exclusion.</p></div>
+    <div><img class="shot" src="img/onboarding.png"><p class="cap">First launch: what is tracked, what is never collected, where data lives, and an explicit consent box. The button stays disabled until it is ticked.</p></div>
+    <div><img class="shot" src="img/dashboard-light.png"><p class="cap">The dashboard in the light theme. "System" follows Windows live.</p></div>
   </div>
   <div class="foot"><span>Dayframe · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
 </section>

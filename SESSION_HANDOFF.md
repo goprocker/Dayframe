@@ -1,6 +1,6 @@
 # Dayframe — Session Handoff
 
-_Last updated: 2026-11-12 · Chunk 6 in progress (release build, docs, guide) · Landing page v0.9.0 on branch `feat/landing-page`_
+_Last updated: 2026-11-12 · Chunk 6 in progress (release build, docs, guide) · Landing page v0.9.0 merged to `main` (PR #2) and live at https://dayframe.loopfound.in_
 
 Dayframe is a privacy-first Windows desktop time tracker: Tauri 2 + React/TypeScript + Rust + SQLite. Tagline: **See where your day went.**
 
@@ -119,9 +119,14 @@ Pure, no I/O. Input `Sample { now_ms, app, idle_ms, locked }` each tick → outp
 - Project guide: `docs/guide/guide.html` → `Dayframe-Guide.pdf` (23 pages, A4, same format as the Islet guide). Section 03 uses real screenshots from `docs/guide/img/`.
 - Screenshot harness `docs/guide/shots/`: `shot.html`/`shot.tsx` render the real components with `@tauri-apps/api/mocks` and a sample working day (never real user data — the PDF is public); `icons.ts` = icons extracted from local exes; `take.sh` drives headless Edge at 2x against the Vite dev server and crops widget shots to 248×44 / 280×236. Not part of the app build (`tsc` only covers `src`).
 - Rebuild guide: `npm run dev` → `bash docs/guide/shots/take.sh` (if UI changed) → `msedge --headless=new --no-pdf-header-footer --virtual-time-budget=3000 --print-to-pdf=Dayframe-Guide.pdf file:///…/docs/guide/guide.html`. Check overflow with `--dump-dom --window-size=794,1123` and read `body[data-free]` (px free above each footer; negative = overflow).
+- Guide now has section 21 "Website and wiki"; PDF regenerated (24 pages, no overflow).
+- GitHub wiki created (https://github.com/goprocker/Dayframe/wiki): Home, Installation, Using Dayframe, Privacy, Building from Source, Architecture, Landing Page, Troubleshooting, `_Sidebar`. Edit by cloning `https://github.com/goprocker/Dayframe.wiki.git`.
+- README links the wiki, landing page and guide, plus a port-1420 tip.
+- Re-verified 2026-11-12: `npx vitest run` 3/3, `npm run build` OK, app launches via `npm run tauri dev`. The 0.1.0 installer was run on the dev PC (finish/consent clicked by the owner).
+- Dev gotcha: a stale Vite on port 1420 makes `npm run tauri dev` fail ("Port 1420 is already in use"). Either kill it or run only `cd src-tauri && cargo run --no-default-features` against it.
 - **Still to do:** measure release-build CPU/RAM over a real session; install the NSIS build on a clean user and run the manual checks from chunks 4–5.
 
-## Landing page (`landing/`, branch `feat/landing-page`)
+## Landing page (`landing/`, on `main`)
 Separate marketing site, not part of the Tauri app. Plain HTML/CSS/JS on Vite, own `package.json` (version shown on the page) and `CHANGELOG.md`. Visual direction modelled on project44hour.com's layout (serif headline with an italic word, sky/clouds, glass nav, tilted cards) with Dayframe's own content; their copy, imagery and paid fonts were not copied (Instrument Serif + DM Sans instead).
 
 ```
@@ -153,9 +158,11 @@ Hard-won notes:
 
 Run: `cd landing && npm install && npm run dev` → http://localhost:5180 · `npm run build` → `landing/dist`.
 
-State: v0.1.0 committed and pushed (`e24e96c` on `feat/landing-page`); v0.2.0–v0.9.0 changes are **uncommitted** in the working tree, including the 17 MB video. Not merged to `main`. Image credits in `landing/README.md`.
+State: v0.9.0 committed (`baed1b8`), merged to `main` via PR #2 (`a6dc9fb`). The 17 MB video and the installer (`public/download/Dayframe_0.1.0_x64-setup.exe`) are in git. Also added: `changelog.html` + `src/changelog.js` (second Vite entry), `src/downloads.js` (anonymous Abacus download counter; skips localhost and `?me=1` browsers), `vercel.json` (clean URLs, `/download/*` as attachment).
 
-Still to do: real installer link for the Download buttons (they jump to `#download`); check the hero on a large monitor; decide whether to keep the video in git or host it; commit, then PR/merge.
+Deploy: Vercel project `landing`, **Root Directory must be `landing`**, production branch `main`. Domain `dayframe.loopfound.in`. If the root directory is wrong, Vercel builds the Tauri frontend instead and the site shows a blank page.
+
+Still to do: check the hero on a large monitor; consider hosting the video outside git; when the app version changes, copy the new installer into `public/download/` and update the links.
 
 ## Next steps (Chunk 6)
 Perf measurement, NSIS build, README + ARCHITECTURE (see below).
@@ -182,6 +189,12 @@ cd src-tauri && cargo test
 
 ## Git history (main, latest first)
 ```
+a6dc9fb  Merge pull request #2 from goprocker/feat/landing-page
+6e8c8ab  docs(guide): add website and wiki section to project guide
+806cf96  docs: document landing page, wiki and troubleshooting in READMEs
+baed1b8  feat(landing): retro CRT hero, video popup, downloads and changelog page
+e24e96c  feat(landing): add Vite landing page with cumulus clouds and retro CRT hero
+3a2ba2e  docs: update session handoff for chunk 6 progress
 4ccab6c  docs(guide): replace UI mock-ups with real screenshots
 97e5272  docs: add Dayframe project guide PDF
 8346f12  docs: add README and architecture notes

@@ -15,7 +15,7 @@ Repo: https://github.com/goprocker/Dayframe
 | 3 | Dashboard on real data (stats, icons, timeline) | **Done** (verified below) |
 | 4 | Tray, onboarding + consent, settings | **Done** (verified below) |
 | 5 | Floating widget, analytics charts | **Done** (verified below) |
-| 6 | Release: perf measurement, NSIS installer, README/ARCHITECTURE | Next |
+| 6 | Release: perf measurement, NSIS installer, README/ARCHITECTURE | **In progress** |
 
 Full plan: see "Chunks" below.
 
@@ -112,6 +112,12 @@ Pure, no I/O. Input `Sample { now_ms, app, idle_ms, locked }` each tick → outp
 - `cargo test`: **30 passed** (range merge, local-hour mapping, position parsing).
 - `npm run build` + `npx vitest run` (3) pass. `npm run tauri dev` launches, ~32 MB, no panics.
 - **Not yet verified by hand:** widget (off by default — turn on in tray/Settings): drag + position restore, expand/collapse, hide on fullscreen video/game, transparency corners; analytics charts with real data in both themes; tray widget label.
+
+## Chunk 6 — progress
+- `npm run tauri build` succeeds: `Dayframe_0.1.0_x64-setup.exe` 1.94 MiB, `dayframe.exe` 4.6 MB (release, LTO, stripped). No warnings (`db::all_settings` is now test-only).
+- `README.md` and `ARCHITECTURE.md` added.
+- Project guide: `docs/guide/guide.html` → `Dayframe-Guide.pdf` (22 pages, A4). Rebuild with headless Edge: `msedge --headless=new --no-pdf-header-footer --print-to-pdf=Dayframe-Guide.pdf <file:///…/guide.html>`; check overflow with `--dump-dom` and read `body[data-free]` (px free above each footer; negative = overflow).
+- **Still to do:** measure release-build CPU/RAM over a real session; install the NSIS build on a clean user and run the manual checks from chunks 4–5.
 
 ## Next steps (Chunk 6)
 Perf measurement, NSIS build, README + ARCHITECTURE (see below).

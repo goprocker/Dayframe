@@ -1,0 +1,747 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Dayframe Guide</title>
+<style>
+@page { size: A4; margin: 0; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: "Segoe UI", system-ui, sans-serif; color: #16171d; font-size: 10.5pt; line-height: 1.45; background: #fff; }
+.page { width: 210mm; height: 297mm; padding: 22mm 18mm 16mm; position: relative; page-break-after: always; overflow: hidden; }
+.page:last-child { page-break-after: auto; }
+/* Dayframe motif: a day timeline strip across the top of every page */
+.page::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2.6mm;
+  background: linear-gradient(90deg, #e3e4ea 0 18%, #7c8cff 18% 31%, #e3e4ea 31% 33%, #5fb3f4 33% 41%, #4fc3a1 41% 47%, #e3e4ea 47% 52%, #7c8cff 52% 68%, #e86f8f 68% 72%, #d6c35a 72% 79%, #e3e4ea 79% 100%); }
+.foot { position: absolute; bottom: 9mm; left: 18mm; right: 18mm; display: flex; justify-content: space-between; font-size: 7.5pt; color: #6b6d7a; }
+.foot .n::after { content: counter(pg); }
+body { counter-reset: pg; } .page { counter-increment: pg; }
+.kick { color: #4a5bdc; font-weight: 600; font-size: 8.5pt; letter-spacing: .02em; margin-top: 6mm; }
+h1 { font-size: 26pt; font-weight: 800; line-height: 1.15; margin: 1mm 0 2mm; }
+h2 { font-size: 13pt; font-weight: 700; margin: 6mm 0 2.5mm; }
+.lead { font-size: 12pt; color: #6b6d7a; margin-bottom: 5mm; }
+p { margin-bottom: 2mm; }
+ul { padding-left: 4mm; } li { margin-bottom: .8mm; }
+table { width: 100%; border-collapse: collapse; font-size: 9pt; }
+th { text-align: left; font-weight: 500; color: #6b6d7a; font-size: 8pt; padding: 2mm; border-bottom: 1.2px solid #000; }
+td { padding: 2mm; border-bottom: 1px solid #e3e4ea; vertical-align: top; }
+tr:nth-child(even) td { background: #f6f6f8; }
+td:first-child { font-weight: 600; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5mm; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5mm; }
+.card { background: #f2f2f6; padding: 4mm 4mm 3mm; }
+.card h3 { font-size: 10.5pt; font-weight: 600; margin-bottom: 1mm; }
+.card ul { font-size: 8.8pt; }
+.d { display: inline-block; width: 2mm; height: 2mm; border-radius: 50%; margin-right: 2mm; vertical-align: middle; }
+pre { background: #0e0f13; color: #e8e9f0; font: 8.5pt Consolas, monospace; padding: 5mm; white-space: pre-wrap; margin: 2mm 0 3mm; }
+pre.t { padding: 3mm 4mm; margin: 1.5mm 0; font-size: 8pt; }
+code { font: 8.6pt Consolas, monospace; background: #f0f0f4; padding: 0 .8mm; border-radius: .6mm; }
+td code { background: transparent; padding: 0; }
+.small { font-size: 9.2pt; }
+.cap { font-size: 8pt; color: #6b6d7a; margin-top: 2mm; }
+/* cover */
+.cover::before { height: 6mm; }
+.cover .kick { margin-top: 70mm; }
+.cover h1 { font-size: 64pt; margin: 2mm 0 4mm; letter-spacing: -.02em; }
+.cover .sub { font-size: 17pt; font-weight: 300; margin-bottom: 7mm; }
+.meta { position: absolute; left: 18mm; right: 18mm; top: 225mm; border-top: 1px solid #e3e4ea; padding-top: 6mm; display: grid; grid-template-columns: repeat(4, 1fr); }
+.meta small { display: block; font-size: 7.5pt; color: #6b6d7a; font-weight: 600; }
+.meta b { font-size: 11.5pt; }
+.toc div { display: flex; gap: 10mm; padding: 2mm; border-bottom: 1px solid #e3e4ea; font-size: 11.5pt; }
+.toc b { color: #4a5bdc; width: 8mm; }
+.toc2 { display: grid; grid-template-columns: 1fr 1fr; column-gap: 8mm; }
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); background: #f2f2f6; padding: 5mm; margin-top: 10mm; }
+.stats b { font-size: 24pt; font-weight: 800; display: block; }
+.stats small { color: #6b6d7a; font-size: 8pt; }
+.flow { counter-reset: step; list-style: none; padding: 0; font-size: 9.6pt; }
+.flow li { counter-increment: step; position: relative; padding-left: 7mm; margin-bottom: 1.1mm; }
+.flow li::before { content: counter(step); position: absolute; left: 0; top: .3mm; width: 4.6mm; height: 4.6mm; border-radius: 50%; background: #4a5bdc; color: #fff; font-size: 7pt; font-weight: 700; text-align: center; line-height: 4.6mm; }
+.say { background: #eef0fd; border-left: 1mm solid #4a5bdc; padding: 3mm 4mm; margin: 2mm 0 3mm; font-size: 9.8pt; }
+.qa > div { padding: 1.7mm 0; border-bottom: 1px solid #e3e4ea; break-inside: avoid; }
+.qa b { display: block; font-size: 9.8pt; margin-bottom: .5mm; }
+.qa p { margin: 0; font-size: 9.2pt; line-height: 1.38; color: #333336; }
+/* UI mock-ups (dark theme tokens from src/index.css) */
+.ui { background: #0e0f13; color: #e8e9f0; border-radius: 2.5mm; padding: 4mm; font-size: 7.5pt; }
+.ui .row { display: flex; align-items: center; gap: 2mm; }
+.ui .muted { color: #8b8d9c; }
+.ui .tile { background: #15161c; border: 1px solid #262833; border-radius: 1.6mm; padding: 2.2mm; flex: 1; }
+.ui .tile b { display: block; font-size: 11pt; }
+.ui .cardx { background: #15161c; border: 1px solid #262833; border-radius: 1.6mm; padding: 2.5mm; margin-top: 2mm; }
+.ui .lbl { font-size: 6pt; letter-spacing: .05em; color: #8b8d9c; margin-bottom: 1.5mm; }
+.tl { display: flex; height: 4mm; border-radius: 1mm; overflow: hidden; background: #1c1d25; }
+.bar { height: 1.4mm; border-radius: 1mm; background: #1c1d25; overflow: hidden; margin-top: .8mm; }
+.bar i { display: block; height: 100%; }
+.ico { width: 4.5mm; height: 4.5mm; border-radius: 1mm; flex: none; }
+.pillw { display: inline-flex; align-items: center; gap: 2mm; background: #15161c; border: 1px solid #262833; color: #e8e9f0; border-radius: 99px; padding: 1.6mm 2mm 1.6mm 3.4mm; font-size: 7.5pt; }
+.dotg { width: 1.8mm; height: 1.8mm; border-radius: 50%; display: inline-block; }
+.hb { display: flex; align-items: flex-end; gap: .5mm; height: 12mm; }
+.hb i { flex: 1; background: #7c8cff; border-radius: .4mm .4mm 0 0; }
+.diagram { display: grid; gap: 2mm; font-size: 8.6pt; }
+.box { border: 1.2px solid #16171d; padding: 2.5mm 3mm; background: #fff; }
+.box b { display: block; font-size: 9.4pt; }
+.box small { color: #6b6d7a; }
+.arrow { text-align: center; color: #4a5bdc; font-weight: 700; font-size: 11pt; line-height: 1; }
+.scen { display: grid; grid-template-columns: 34mm 1fr; gap: 1.6mm 3mm; align-items: center; font-size: 8.4pt; }
+.lane { position: relative; height: 5mm; background: #f2f2f6; }
+.lane i { position: absolute; top: 0; bottom: 0; }
+.lane s { position: absolute; top: -.6mm; bottom: -.6mm; width: .5mm; background: #16171d; text-decoration: none; }
+.legend { font-size: 7.5pt; color: #6b6d7a; margin-top: 2mm; }
+.tag { display: inline-block; font-size: 7pt; font-weight: 700; padding: .2mm 1.4mm; border-radius: 1mm; background: #4a5bdc; color: #fff; vertical-align: middle; }
+</style></head><body>
+
+<!-- ============ COVER ============ -->
+<section class="page cover">
+  <div class="kick">PROJECT GUIDE</div>
+  <h1>Dayframe</h1>
+  <div class="sub">See where your day went.</div>
+  <p style="color:#6b6d7a;font-size:11.5pt">A privacy-first time tracker for Windows. It notices which app you are using,<br>for how long, and turns your day into a timeline you can read at a glance.</p>
+  <div class="ui" style="margin-top:12mm">
+    <div class="row muted" style="justify-content:space-between"><span>08:00</span><span>10:00</span><span>12:00</span><span>14:00</span><span>16:00</span><span>18:00</span></div>
+    <div class="tl" style="height:7mm;margin-top:1.5mm">
+      <i style="width:4%"></i><i style="width:14%;background:#7c8cff"></i><i style="width:5%;background:#5fb3f4"></i><i style="width:3%;background:#4fc3a1"></i><i style="width:9%;background:#7c8cff"></i><i style="width:8%"></i><i style="width:6%;background:#e86f8f"></i><i style="width:12%;background:#7c8cff"></i><i style="width:4%;background:#5fb3f4"></i><i style="width:7%;background:#d6c35a"></i><i style="width:10%;background:#7c8cff"></i><i style="width:3%;background:#4fc3a1"></i>
+    </div>
+    <div class="row" style="margin-top:2.5mm;gap:4mm"><span><span class="dotg" style="background:#7c8cff"></span> Code</span><span><span class="dotg" style="background:#5fb3f4"></span> Chrome</span><span><span class="dotg" style="background:#4fc3a1"></span> Slack</span><span><span class="dotg" style="background:#e86f8f"></span> Figma</span><span><span class="dotg" style="background:#d6c35a"></span> Word</span></div>
+  </div>
+  <div class="meta">
+    <div><small>MADE BY</small><b>Gopinath</b></div>
+    <div><small>VERSION</small><b>0.1.0</b></div>
+    <div><small>PLATFORM</small><b>Windows 10 / 11</b></div>
+    <div><small>BUILT WITH</small><b>Tauri 2 · Rust</b></div>
+  </div>
+  <div class="foot"><span>© 2026 Gopinath. All rights reserved.</span><span>Updated 12 Nov 2026 · github.com/goprocker/Dayframe</span></div>
+</section>
+
+<!-- ============ CONTENTS ============ -->
+<section class="page">
+  <div class="kick">CONTENTS</div>
+  <h1>Inside this guide</h1>
+  <div class="toc toc2" style="grid-auto-flow:column;grid-template-rows:repeat(10,auto)">
+    <div><b>01</b>Why Dayframe exists</div><div><b>02</b>Every feature</div><div><b>03</b>How it looks</div>
+    <div><b>04</b>Tech stack</div><div><b>05</b>Architecture</div><div><b>06</b>How tracking works</div>
+    <div><b>07</b>Data model and time</div><div><b>08</b>Repository map</div><div><b>09</b>Install and run</div>
+    <div><b>10</b>Using Dayframe</div><div><b>11</b>Settings</div><div><b>12</b>Build, test, debug</div>
+    <div><b>13</b>Privacy, troubleshooting, uninstall</div><div><b>14</b>Dayframe in plain English</div>
+    <div><b>15</b>Words you need</div><div><b>16</b>Follow the data</div><div><b>17</b>Engineering ideas it shows</div>
+    <div><b>18</b>Hard problems and limits</div><div><b>19</b>Interview questions and answers</div><div><b>20</b>Cheat sheet</div>
+  </div>
+  <div class="stats">
+    <div><b>1 s</b><small>sampling interval</small></div><div><b>30 s</b><small>max data lost on a crash</small></div>
+    <div><b>1.94 MB</b><small>installer size</small></div><div><b>33</b><small>passing tests</small></div>
+  </div>
+  <div class="say" style="margin-top:8mm">Everything in this guide describes the code in the repository at version 0.1.0. Numbers such as file sizes and test counts were measured on the build this guide was written from.</div>
+  <div class="foot"><span>Dayframe · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<!-- ============ 01 ============ -->
+<section class="page">
+  <div class="kick">SECTION 01</div>
+  <h1>Why Dayframe exists</h1>
+  <div class="lead">At six in the evening most people cannot say where the day went. Existing trackers either want an account and a cloud, or read far more than they need: window titles, URLs, even screenshots. Dayframe answers the one question with the least data possible.</div>
+  <div class="grid2">
+    <div class="card"><h3>Honest numbers</h3>Idle time, the lock screen and sleep are never counted. If you walk away, the clock stops at the moment your hands left the keyboard, not five minutes later.</div>
+    <div class="card"><h3>Private by design</h3>Only the executable and how long it was in front. No titles, no URLs, no keystrokes, no screenshots. No network code at all.</div>
+    <div class="card"><h3>Always on, never in the way</h3>Lives in the tray, starts with Windows if you want, and a tiny optional widget shows the current app. It hides when you go fullscreen.</div>
+    <div class="card"><h3>Yours to delete</h3>One SQLite file on your disk. Exclude apps, delete a date range or everything, withdraw consent any time.</div>
+  </div>
+  <h2>Design goals</h2>
+  <table>
+    <tr><th>Goal</th><th>How the code meets it</th></tr>
+    <tr><td>Correct time</td><td>A pure state machine with unit tests for switching, idle, sleep gaps, lock, exclusions, pause and clocks going backwards.</td></tr>
+    <tr><td>Crash safe</td><td>The open session is written to disk every 30 s, so a crash or power cut loses at most 30 s.</td></tr>
+    <tr><td>Light</td><td>One background thread waking once a second; about 32 MB of memory; a 1.94 MB installer.</td></tr>
+    <tr><td>Consent first</td><td>Nothing is recorded until you tick an explicit consent box on first launch.</td></tr>
+    <tr><td>Local only</td><td>A strict Content Security Policy allows only local resources and the app's own IPC.</td></tr>
+  </table>
+  <div class="foot"><span>Dayframe · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<!-- ============ 02 ============ -->
+<section class="page">
+  <div class="kick">SECTION 02</div>
+  <h1>Every feature</h1>
+  <div class="lead">Grouped by area. Everything below ships in this repository today.</div>
+  <div class="grid2">
+    <div class="card"><h3><span class="d" style="background:#7c8cff"></span>Tracking</h3><ul>
+      <li>Foreground app sampled every second</li>
+      <li>App name from the executable's own file description (e.g. "Visual Studio Code"), falling back to the file name</li>
+      <li>Idle threshold, default 5 min (1 to 120 min); idle time is cut back to when input stopped</li>
+      <li>Lock screen, sleep and hibernate never counted</li>
+      <li>Pause and resume from the dashboard, widget or tray</li>
+      <li>Elevated apps recorded as "Protected application"</li></ul></div>
+    <div class="card"><h3><span class="d" style="background:#4fc3a1"></span>Dashboard</h3><ul>
+      <li>Tiles: active time, apps used, app switches, longest session</li>
+      <li>Day timeline with hover details</li>
+      <li>App list with real icons, bars, category, sessions and share</li>
+      <li>By-hour bars and a clickable 7-day strip</li>
+      <li>Previous/next day, date picker, jump to Today</li>
+      <li>Today refreshes every 30 s, only while visible</li></ul></div>
+    <div class="card"><h3><span class="d" style="background:#5fb3f4"></span>Analytics</h3><ul>
+      <li>7, 14 or 30-day ranges</li>
+      <li>Total, daily average over active days, top category, top app</li>
+      <li>Daily time stacked by category</li>
+      <li>Category donut with percentages</li>
+      <li>Average by hour of day (DST-correct)</li>
+      <li>Top 10 applications</li></ul></div>
+    <div class="card"><h3><span class="d" style="background:#e86f8f"></span>Floating widget</h3><ul>
+      <li>Transparent, always-on-top pill; off by default</li>
+      <li>Status dot, current app, live session timer, pause</li>
+      <li>Expands to today's total and top 3 apps</li>
+      <li>Drag anywhere; position remembered per monitor layout</li>
+      <li>Hides while a fullscreen app is in front</li></ul></div>
+    <div class="card"><h3><span class="d" style="background:#d6c35a"></span>Tray and lifecycle</h3><ul>
+      <li>Open, Pause/Resume, Show/Hide widget, Settings, Quit</li>
+      <li>Closing the window hides it to the tray</li>
+      <li>Single instance: launching again focuses the running app</li>
+      <li>Start with Windows, straight to the tray</li>
+      <li>On quit the open session is closed at quit time</li></ul></div>
+    <div class="card"><h3><span class="d" style="background:#8b8d9c"></span>Data and privacy</h3><ul>
+      <li>Explicit consent screen showing the real data folder</li>
+      <li>Exclude apps; change an app's category (8 categories)</li>
+      <li>Delete a date range or all data, with two-step confirm</li>
+      <li>Dark, light or follow Windows</li></ul></div>
+  </div>
+  <div class="foot"><span>Dayframe · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<!-- ============ 03 ============ -->
+<section class="page">
+  <div class="kick">SECTION 03</div>
+  <h1>How it looks</h1>
+  <div class="lead">Faithful mock-ups built from the app's own design tokens (dark theme). The light theme swaps the same tokens.</div>
+  <div class="ui">
+    <div class="row"><b style="font-size:9pt">Dayframe</b><span style="margin-left:auto" class="muted">‹ 12/11/2026 ›</span><span class="pillw" style="padding:1mm 2.4mm"><span class="dotg" style="background:#34d399"></span>Tracking · Visual Studio Code</span></div>
+    <div style="font-size:12pt;font-weight:600;margin:2.5mm 0 1mm">Today</div>
+    <div class="row" style="gap:1.6mm">
+      <div class="tile"><span class="muted">Active time</span><b>6h 42m</b></div>
+      <div class="tile"><span class="muted">Apps used</span><b>11</b></div>
+      <div class="tile"><span class="muted">App switches</span><b>214</b></div>
+      <div class="tile"><span class="muted">Longest session</span><b>1h 18m</b><span class="muted">Visual Studio Code</span></div>
+    </div>
+    <div class="cardx"><div class="lbl">TIMELINE</div>
+      <div class="tl"><i style="width:6%"></i><i style="width:16%;background:#7c8cff"></i><i style="width:5%;background:#5fb3f4"></i><i style="width:4%;background:#4fc3a1"></i><i style="width:11%;background:#7c8cff"></i><i style="width:9%"></i><i style="width:7%;background:#e86f8f"></i><i style="width:14%;background:#7c8cff"></i><i style="width:6%;background:#5fb3f4"></i><i style="width:8%;background:#d6c35a"></i></div></div>
+    <div class="row" style="align-items:stretch;gap:2mm">
+      <div class="cardx" style="flex:3"><div class="lbl">APPLICATIONS</div>
+        <div class="row"><span class="ico" style="background:#7c8cff"></span><div style="flex:1"><div class="row" style="justify-content:space-between"><span>Visual Studio Code</span><span class="muted">3h 05m</span></div><div class="bar"><i style="width:100%;background:#7c8cff"></i></div></div></div>
+        <div class="row" style="margin-top:1.6mm"><span class="ico" style="background:#5fb3f4"></span><div style="flex:1"><div class="row" style="justify-content:space-between"><span>Google Chrome</span><span class="muted">1h 47m</span></div><div class="bar"><i style="width:58%;background:#5fb3f4"></i></div></div></div>
+        <div class="row" style="margin-top:1.6mm"><span class="ico" style="background:#4fc3a1"></span><div style="flex:1"><div class="row" style="justify-content:space-between"><span>Slack</span><span class="muted">52m</span></div><div class="bar"><i style="width:28%;background:#4fc3a1"></i></div></div></div>
+      </div>
+      <div class="cardx" style="flex:2"><div class="lbl">BY HOUR</div>
+        <div class="hb"><i style="height:4%;opacity:.2"></i><i style="height:4%;opacity:.2"></i><i style="height:40%"></i><i style="height:85%"></i><i style="height:95%"></i><i style="height:60%"></i><i style="height:30%"></i><i style="height:80%"></i><i style="height:100%"></i><i style="height:70%"></i><i style="height:45%"></i><i style="height:4%;opacity:.2"></i></div></div>
+    </div>
+  </div>
+  <p class="cap">Dashboard: header with date navigation and the live tracker pill, four tiles, the day timeline, apps with icons and the by-hour chart.</p>
+  <h2>Widget states</h2>
+  <div class="grid3" style="gap:3mm;font-size:8pt;color:#6b6d7a">
+    <div><span class="pillw"><span class="dotg" style="background:#34d399"></span>Visual Studio Code <span style="color:#8b8d9c">24:07</span> ❚❚ ⌄</span><br><b style="color:#16171d">Tracking</b> · green dot, live timer.</div>
+    <div><span class="pillw"><span class="dotg" style="background:#fbbf24"></span>Paused ▶ ⌄</span><br><b style="color:#16171d">Paused</b> · amber dot, resume button.</div>
+    <div><span class="pillw"><span class="dotg" style="background:#71717a"></span>Idle ❚❚ ⌄</span><br><b style="color:#16171d">Idle / Locked</b> · grey dot, no timer.</div>
+  </div>
+  <div class="row" style="display:flex;gap:4mm;margin-top:4mm;align-items:flex-start">
+    <div class="ui" style="width:62mm;border-radius:4mm;padding:0;background:#15161c;border:1px solid #262833">
+      <div class="row" style="padding:2.4mm 3mm"><span class="dotg" style="background:#34d399"></span><span style="flex:1">Visual Studio Code</span><span class="muted">24:07</span> ❚❚ ⌃</div>
+      <div style="border-top:1px solid #262833;padding:2.5mm 3mm">
+        <div class="row" style="justify-content:space-between"><span class="muted">Today</span><b style="font-size:10pt">6h 42m</b></div>
+        <div class="row" style="margin-top:1mm"><span class="dotg" style="background:#7c8cff;border-radius:.4mm"></span><span style="flex:1">Visual Studio Code</span><span class="muted">3h 05m</span></div>
+        <div class="row"><span class="dotg" style="background:#5fb3f4;border-radius:.4mm"></span><span style="flex:1">Google Chrome</span><span class="muted">1h 47m</span></div>
+        <div class="row"><span class="dotg" style="background:#4fc3a1;border-radius:.4mm"></span><span style="flex:1">Slack</span><span class="muted">52m</span></div>
+        <div style="background:#1c1d25;text-align:center;border-radius:1.4mm;padding:1.2mm;margin-top:1.6mm">Open dashboard</div>
+      </div>
+    </div>
+    <div class="small" style="flex:1"><b>Expanded widget.</b> The window grows from 248 × 44 to 280 × 236 logical pixels. Today's totals are fetched only while expanded and refreshed every 30 s. The rest of the window is transparent, so only the rounded card is drawn.<br><br><b>Tray menu:</b> Open Dayframe · Pause tracking · Show widget · Settings · Quit Dayframe. The tooltip reads "Dayframe · tracking", "· paused" or "· tracking off".</div>
+  </div>
+  <div class="foot"><span>Dayframe · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<!-- ============ 04 ============ -->
+<section class="page">
+  <div class="kick">SECTION 04</div>
+  <h1>Tech stack</h1>
+  <div class="lead">A small Rust core does all the work that must be correct and fast; a React frontend draws it. Tauri joins them using the WebView2 already built into Windows.</div>
+  <table>
+    <tr><th>Layer</th><th>Choice</th><th>Why</th></tr>
+    <tr><td>Shell</td><td>Tauri 2</td><td>Native window, tray, single instance and autostart plugins; uses the system WebView2 so the installer stays under 2 MB (Electron ships a whole browser).</td></tr>
+    <tr><td>Core</td><td>Rust 2021</td><td>Memory-safe Win32 calls, a cheap background thread, and fast tests for the state machine.</td></tr>
+    <tr><td>Win32</td><td><code>windows</code> 0.62</td><td>Microsoft's official bindings: foreground window, process image name, version resources, idle time, input desktop, monitor info, icons.</td></tr>
+    <tr><td>Storage</td><td>SQLite via <code>rusqlite</code> (bundled)</td><td>One file, transactional, WAL mode for crash safety; no server.</td></tr>
+    <tr><td>Time</td><td><code>chrono</code></td><td>Local hour of day for analytics across DST changes.</td></tr>
+    <tr><td>UI</td><td>React 19 + TypeScript</td><td>Typed command wrappers in <code>lib/api.ts</code>; components per screen.</td></tr>
+    <tr><td>Styling</td><td>Tailwind CSS 4</td><td>Design tokens as CSS variables; dark and light swap one attribute.</td></tr>
+    <tr><td>Charts</td><td>Recharts 3</td><td>Analytics only, lazy-loaded so the dashboard and widget stay small.</td></tr>
+    <tr><td>Icons</td><td>lucide-react</td><td>UI icons. App icons come from the executables themselves.</td></tr>
+    <tr><td>Build</td><td>Vite 8, NSIS</td><td>Fast dev server on port 1420; per-user installer with no admin rights.</td></tr>
+    <tr><td>Tests</td><td><code>cargo test</code>, Vitest</td><td>30 Rust tests and 3 frontend tests.</td></tr>
+  </table>
+  <h2>Sizes measured on 0.1.0</h2>
+  <div class="grid3">
+    <div class="card"><h3>1.94 MB</h3>NSIS installer</div>
+    <div class="card"><h3>4.6 MB</h3><code>dayframe.exe</code> (release, LTO, stripped)</div>
+    <div class="card"><h3>~32 MB</h3>memory while tracking</div>
+    <div class="card"><h3>74 KB gz</h3>main JS bundle</div>
+    <div class="card"><h3>112 KB gz</h3>Analytics chunk (loaded on demand)</div>
+    <div class="card"><h3>1.8 KB gz</h3>Widget chunk</div>
+  </div>
+  <div class="foot"><span>Dayframe · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<!-- ============ 05 ============ -->
+<section class="page">
+  <div class="kick">SECTION 05</div>
+  <h1>Architecture</h1>
+  <div class="lead">One process. A tracker thread samples Windows, a pure engine decides what happened, and SQLite remembers it. The windows only read.</div>
+  <div class="diagram">
+    <div class="box"><b>Windows (Win32)</b><small>foreground window → process → exe path and description · idle time · input desktop (lock) · monitor rect (fullscreen)</small></div>
+    <div class="arrow">↓ every 1 s</div>
+    <div class="grid2" style="gap:2mm">
+      <div class="box"><b>Tracker thread</b> <small><code>tracker/mod.rs</code></small><br><small>Builds a Sample, reads pause/consent flags, applies actions under the DB lock, publishes a Snapshot, emits <code>tracker://state</code> only on change.</small></div>
+      <div class="box"><b>Engine</b> <small><code>tracker/engine.rs</code></small><br><small>Pure state machine. Sample in, actions out: Open, Checkpoint, Close. No I/O, fully unit-tested.</small></div>
+    </div>
+    <div class="arrow">↓ actions</div>
+    <div class="box"><b>SQLite</b> <small><code>db.rs</code> · %APPDATA%\com.dayframe.app\dayframe.db · WAL</small><br><small>applications · activity_sessions · projects · settings</small></div>
+    <div class="arrow">↑ commands (invoke) &nbsp;&nbsp;&nbsp; ↓ events</div>
+    <div class="grid3" style="gap:2mm">
+      <div class="box"><b>main window</b><small>Onboarding · Dashboard · Analytics · Settings</small></div>
+      <div class="box"><b>widget window</b><small>Transparent pill; created on demand</small></div>
+      <div class="box"><b>Tray</b><small><code>tray.rs</code>: menu, tooltip, pause, widget toggle</small></div>
+    </div>
+  </div>
+  <h2>Shared state</h2>
+  <table class="small">
+    <tr><th>Thing</th><th>Type</th><th>Who touches it</th></tr>
+    <tr><td>Database</td><td><code>Mutex&lt;Connection&gt;</code></td><td>Tracker thread writes; commands read and write; icon extraction happens outside the lock.</td></tr>
+    <tr><td>Control</td><td>atomics</td><td><code>consented</code>, <code>paused</code>, <code>reload</code>, <code>reopen</code>, <code>stop</code>: flipped by commands and tray, read by the loop each tick.</td></tr>
+    <tr><td>Snapshot</td><td><code>Mutex&lt;Snapshot&gt;</code></td><td>Status, app name, session start. Read by <code>tracker_state</code>.</td></tr>
+    <tr><td>WidgetState</td><td>atomics</td><td>Enabled flag and current fullscreen state.</td></tr>
+  </table>
+  <p class="small" style="margin-top:3mm">Startup order matters: open DB → recover → read consent and widget flag → manage state → spawn tracker → build tray → show widget → show main window unless launched with <code>--minimized</code>. On quit, <code>stop</code> is set and the thread is joined so the open session ends at quit time.</p>
+  <div class="foot"><span>Dayframe · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<!-- ============ 06 ============ -->
+<section class="page">
+  <div class="kick">SECTION 06</div>
+  <h1>How tracking works</h1>
+  <div class="lead">Each second the loop hands the engine one <code>Sample { now_ms, app, idle_ms, locked }</code>. The engine answers with zero or more actions. These rules are the whole product.</div>
+  <table class="small">
+    <tr><th>Situation</th><th>What the engine does</th></tr>
+    <tr><td>Same app, still active</td><td>Nothing, except a Checkpoint every 30 s that moves the session end forward.</td></tr>
+    <tr><td>App switch</td><td>Close the old session at <code>now</code> and open the new one at <code>now</code>. Sessions never overlap.</td></tr>
+    <tr><td>Idle ≥ threshold</td><td>Close at <code>now − idle_ms</code>: the moment input stopped. Idle time is never counted.</td></tr>
+    <tr><td>Idle below threshold</td><td>Still counted. Reading or watching without touching the mouse is real use.</td></tr>
+    <tr><td>Gap &gt; 15 s between ticks</td><td>The PC slept or hibernated. Close at the last tick, not at wake-up.</td></tr>
+    <tr><td>Clock went backwards</td><td>Treated like a gap; never produces a negative session.</td></tr>
+    <tr><td>Locked, paused, excluded, no app</td><td>Close at <code>now</code>; reopen when the condition ends.</td></tr>
+  </table>
+  <h2>Five scenarios on a timeline</h2>
+  <div class="scen">
+    <span>Switch Code → Chrome</span><div class="lane"><i style="left:5%;width:45%;background:#7c8cff"></i><i style="left:50%;width:45%;background:#5fb3f4"></i></div>
+    <span>Idle 7 min (threshold 5)</span><div class="lane"><i style="left:5%;width:35%;background:#7c8cff"></i><s style="left:40%"></s><s style="left:75%"></s></div>
+    <span>Laptop lid closed</span><div class="lane"><i style="left:5%;width:30%;background:#7c8cff"></i><i style="left:70%;width:25%;background:#7c8cff"></i></div>
+    <span>Lock screen</span><div class="lane"><i style="left:5%;width:40%;background:#7c8cff"></i><i style="left:62%;width:33%;background:#7c8cff"></i></div>
+    <span>Excluded app in front</span><div class="lane"><i style="left:5%;width:30%;background:#7c8cff"></i><i style="left:35%;width:30%;background:repeating-linear-gradient(45deg,#e3e4ea 0 1mm,#fff 1mm 2mm)"></i><i style="left:65%;width:30%;background:#7c8cff"></i></div>
+  </div>
+  <p class="legend">Coloured = counted. Line 2: the session ends where input stopped (first mark), not where idle was detected (second mark). Hatched = not recorded.</p>
+  <h2>Why a pure engine?</h2>
+  <p class="small">Every rule above is a function of the sample and the engine's memory, so it can be tested with fake timestamps in microseconds instead of waiting minutes for a real idle. The Win32 code and the database stay outside; the loop just glues them. Nine engine tests cover exactly the rows in the table.</p>
+  <div class="foot"><span>Dayframe · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<!-- ============ 07 ============ -->
+<section class="page">
+  <div class="kick">SECTION 07</div>
+  <h1>Data model and time</h1>
+  <div class="lead">Four tables, UTC milliseconds everywhere, and day boundaries decided by the screen that knows your calendar.</div>
+<pre class="t">applications       id · exe_key UNIQUE · display_name · executable_path · category
+                   excluded · icon_png (cached) · first_seen_at
+activity_sessions  id · application_id → applications (CASCADE) · started_at · ended_at
+                   duration_seconds · project_id → projects · CHECK (ended_at >= started_at)
+projects           id · name · color · created_at          (reserved for later)
+settings           key · value                            (consent, theme, idle, widget …)
+indexes            started_at · ended_at · application_id</pre>
+  <div class="grid2" style="margin-top:3mm">
+    <div class="card"><h3>Always stored closed</h3><span class="small">A session row is inserted with <code>ended_at = started_at</code> and pushed forward by each checkpoint. After a crash the row is already valid; startup recovery only recomputes <code>duration_seconds</code>.</span></div>
+    <div class="card"><h3>Migrations</h3><span class="small">An append-only <code>MIGRATIONS</code> list tracked by <code>PRAGMA user_version</code>. Never edit an applied one; add the next.</span></div>
+    <div class="card"><h3>Clipping</h3><span class="small"><code>intervals(from, to)</code> returns every session overlapping the window, cut to it. A session from 23:30 to 00:45 gives 30 min to one day and 45 to the next.</span></div>
+    <div class="card"><h3>Deleting a range</h3><span class="small"><code>delete_range</code> trims or splits sessions that straddle the edges, so only the chosen time disappears.</span></div>
+  </div>
+  <h2>Local days and DST</h2>
+  <p class="small">The database never decides what "today" is. The frontend computes local midnights (<code>lib/time.ts</code>) and passes them as bounds. On the day clocks go forward a day is 23 hours, so the hourly chart gets 23 buckets; on the day they go back, 25. The analytics "average by hour" maps each bucket to its real local hour with <code>chrono::Local</code>, so 02:00 on a DST day is not mislabelled.</p>
+  <h2>Deletion never comes back</h2>
+  <p class="small">If you delete data while a session is open, the next checkpoint could extend a row that no longer exists, or re-create time you just removed. The delete command sets <code>reopen</code> while still holding the DB lock; the tracker checks it under the same lock and forgets its open session before writing anything else.</p>
+  <div class="foot"><span>Dayframe · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<!-- ============ 08 ============ -->
+<section class="page">
+  <div class="kick">SECTION 08</div>
+  <h1>Repository map</h1>
+  <div class="lead">Where everything lives. Rust in <code>src-tauri/src</code>, React in <code>src</code>.</div>
+  <table class="small">
+    <tr><th>Path</th><th>What it does</th></tr>
+    <tr><td>src-tauri/src/lib.rs</td><td>App setup, managed state, commands for stats and icons, startup and shutdown.</td></tr>
+    <tr><td>src-tauri/src/tracker/engine.rs</td><td>The pure tracking state machine and its tests.</td></tr>
+    <tr><td>src-tauri/src/tracker/win.rs</td><td>Win32 sampling: foreground app, idle, lock, fullscreen.</td></tr>
+    <tr><td>src-tauri/src/tracker/mod.rs</td><td>The 1 s loop, Control flags, Snapshot, DB writer.</td></tr>
+    <tr><td>src-tauri/src/db.rs</td><td>Schema, migrations, queries, clipping, deletion, recovery.</td></tr>
+    <tr><td>src-tauri/src/stats.rs</td><td>Day summary, timeline merge, hourly buckets, range analytics.</td></tr>
+    <tr><td>src-tauri/src/icons.rs</td><td>Executable icon → PNG, cached in the DB.</td></tr>
+    <tr><td>src-tauri/src/categories.rs</td><td>Default category from the exe name; the 8 categories.</td></tr>
+    <tr><td>src-tauri/src/settings.rs</td><td>Settings, consent, exclusions, categories, deletion commands.</td></tr>
+    <tr><td>src-tauri/src/tray.rs</td><td>Tray menu, labels and tooltip.</td></tr>
+    <tr><td>src-tauri/src/widget.rs</td><td>Widget window, position, fullscreen hiding.</td></tr>
+    <tr><td>src-tauri/tauri.conf.json</td><td>Window, CSP, bundle (NSIS) config.</td></tr>
+    <tr><td>src-tauri/capabilities/</td><td>Which windows may call what.</td></tr>
+    <tr><td>src/main.tsx</td><td>Picks Widget or App by window label.</td></tr>
+    <tr><td>src/App.tsx</td><td>Consent gate, view switch, theme.</td></tr>
+    <tr><td>src/components/</td><td>Dashboard, Timeline, AppIcon, Analytics, Settings, Onboarding, Widget.</td></tr>
+    <tr><td>src/lib/api.ts</td><td>Typed wrappers for every command and event.</td></tr>
+    <tr><td>src/lib/time.ts</td><td>Local-day bounds and formatting (with Vitest tests).</td></tr>
+    <tr><td>src/lib/colors.ts</td><td>Per-app and per-category colours.</td></tr>
+    <tr><td>src/index.css</td><td>Tailwind and the design tokens for both themes.</td></tr>
+    <tr><td>README.md · ARCHITECTURE.md</td><td>Overview and design notes.</td></tr>
+    <tr><td>SESSION_HANDOFF.md</td><td>Build history and what was verified, chunk by chunk.</td></tr>
+  </table>
+  <div class="foot"><span>Dayframe · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<!-- ============ 09 ============ -->
+<section class="page">
+  <div class="kick">SECTION 09</div>
+  <h1>Install and run</h1>
+  <div class="lead">Use the installer, or build from source in a few commands.</div>
+  <h2>Installer</h2>
+  <ol class="flow">
+    <li>Run <code>Dayframe_0.1.0_x64-setup.exe</code>. It installs for your user only; no admin rights.</li>
+    <li>If WebView2 is missing (rare on Windows 10/11) the installer downloads it.</li>
+    <li>Dayframe opens on the consent screen. Nothing is tracked until you agree.</li>
+  </ol>
+  <h2>From source</h2>
+  <p class="small">You need Windows 10/11, Node.js 20+, Rust stable with the MSVC toolchain and the Tauri prerequisites (Visual Studio Build Tools with "Desktop development with C++").</p>
+<pre>git clone https://github.com/goprocker/Dayframe
+cd Dayframe
+npm install
+npm run tauri dev        # run with hot reload (Vite on port 1420)
+npm run tauri build      # release exe + installer</pre>
+  <p class="small">The installer lands in <code>src-tauri/target/release/bundle/nsis/</code>. The first Rust build takes several minutes; later ones are incremental.</p>
+  <h2>Where things are on disk</h2>
+  <table class="small">
+    <tr><th>What</th><th>Location</th></tr>
+    <tr><td>Database</td><td><code>%APPDATA%\com.dayframe.app\dayframe.db</code> (plus <code>-wal</code> and <code>-shm</code> files)</td></tr>
+    <tr><td>WebView data</td><td><code>%LOCALAPPDATA%\com.dayframe.app\</code></td></tr>
+    <tr><td>Autostart</td><td>A Run registry entry for your user, launching with <code>--minimized</code></td></tr>
+  </table>
+  <div class="foot"><span>Dayframe · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<!-- ============ 10 ============ -->
+<section class="page">
+  <div class="kick">SECTION 10</div>
+  <h1>Using Dayframe</h1>
+  <div class="lead">A normal day, from first launch to reading the week.</div>
+  <h2>First launch</h2>
+  <ol class="flow">
+    <li>The onboarding screen lists what is tracked, what is never collected, and the real folder where data is stored.</li>
+    <li>Tick the consent box and press the button to start. Tracking begins on the next second.</li>
+    <li>You land on the dashboard. It fills in as you use other apps.</li>
+  </ol>
+  <h2>Everyday</h2>
+  <div class="grid2">
+    <div class="card"><h3>Glance</h3><span class="small">The pill in the header says what is being tracked now: Tracking · app, Idle, Paused, Locked, Excluded app, or Waiting.</span></div>
+    <div class="card"><h3>Pause</h3><span class="small">Use the pause button in the header pill, the widget, or the tray. The open session closes immediately; nothing is counted until you resume.</span></div>
+    <div class="card"><h3>Close the window</h3><span class="small">It hides to the tray and keeps tracking. Use tray › Quit to stop completely.</span></div>
+    <div class="card"><h3>Look back</h3><span class="small">Arrows, the date picker, or a click on any bar in the 7-day strip. "Today" jumps back.</span></div>
+    <div class="card"><h3>Timeline</h3><span class="small">Hover a block for the app, start, end and duration. Same-app pieces less than 2 s apart are merged.</span></div>
+    <div class="card"><h3>Analytics</h3><span class="small">The chart button in the header. Choose 7, 14 or 30 days.</span></div>
+  </div>
+  <h2>The widget</h2>
+  <ol class="flow">
+    <li>Turn it on from tray › Show widget, or Settings › Floating widget.</li>
+    <li>It appears at the top-right of your main screen. Drag it by any empty part.</li>
+    <li>The chevron expands it to today's total and your top three apps; "Open dashboard" brings the main window forward.</li>
+    <li>Start a fullscreen video or game and it disappears; it returns when you leave fullscreen.</li>
+  </ol>
+  <h2>Reading the numbers</h2>
+  <p class="small"><b>App switches</b> counts changes between timeline blocks. <b>Longest session</b> is the longest merged block of one app. <b>Daily average</b> in Analytics divides by days that had any activity, so a weekend off doesn't drag it down.</p>
+  <div class="foot"><span>Dayframe · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<!-- ============ 11 ============ -->
+<section class="page">
+  <div class="kick">SECTION 11</div>
+  <h1>Settings</h1>
+  <div class="lead">Open from the gear in the dashboard header or tray › Settings. Changes apply immediately.</div>
+  <table>
+    <tr><th>Setting</th><th>Options</th><th>Effect</th></tr>
+    <tr><td>Theme</td><td>System · Dark · Light</td><td>System follows Windows live. Both windows switch together.</td></tr>
+    <tr><td>Idle threshold</td><td>1, 2, 3, 5, 10, 15, 30 min</td><td>How long without input before time stops counting. The tracker reloads it on the next tick.</td></tr>
+    <tr><td>Floating widget</td><td>On · Off</td><td>Shows or hides the always-on-top pill. Same as the tray item.</td></tr>
+    <tr><td>Start with Windows</td><td>On · Off</td><td>Launches to the tray at sign-in.</td></tr>
+    <tr><td>Tracking consent</td><td>Withdraw</td><td>Stops tracking at once and returns to onboarding. Existing data is kept.</td></tr>
+    <tr><td>Applications</td><td>Exclude · Category</td><td>Excluded apps are never recorded from now on. Categories feed Analytics.</td></tr>
+    <tr><td>Delete a range</td><td>From and to dates</td><td>Removes tracked time in those days, trimming sessions at the edges.</td></tr>
+    <tr><td>Delete all data</td><td>Confirm twice</td><td>Removes every session and app record, then compacts the file. Settings stay.</td></tr>
+    <tr><td>Privacy</td><td>—</td><td>A plain summary of what is and isn't recorded, next to the data folder.</td></tr>
+  </table>
+  <h2>Categories</h2>
+  <div class="grid2 small">
+    <div class="card"><b>Development</b> · Code, Visual Studio, JetBrains IDEs, terminals, Docker Desktop, Postman …</div>
+    <div class="card"><b>Browsing</b> · Chrome, Edge, Firefox, Brave …</div>
+    <div class="card"><b>Communication</b> · Slack, Teams, Discord, Zoom, Outlook, WhatsApp …</div>
+    <div class="card"><b>Design</b> · Figma, Photoshop, Illustrator, Blender …</div>
+    <div class="card"><b>Productivity</b> · Word, Excel, PowerPoint, Notion, Obsidian, Acrobat …</div>
+    <div class="card"><b>Entertainment</b> · Spotify, VLC, Steam, Epic Games …</div>
+    <div class="card"><b>System</b> · Explorer, Settings, Task Manager, Control Panel</div>
+    <div class="card"><b>Other</b> · anything not recognised</div>
+  </div>
+  <p class="cap">Defaults are guessed from the executable name in <code>categories.rs</code>; every app can be changed in Settings.</p>
+  <h2>Confirmations without pop-ups</h2>
+  <p class="small">Destructive buttons switch to a "Confirm?" state inline instead of opening a native dialog. Native dialogs block the WebView and are easy to click through by habit.</p>
+  <div class="foot"><span>Dayframe · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<!-- ============ 12 ============ -->
+<section class="page">
+  <div class="kick">SECTION 12</div>
+  <h1>Build, test, debug</h1>
+  <div class="lead">Three commands cover nearly everything.</div>
+<pre>cd src-tauri &amp;&amp; cargo test   # 30 Rust tests
+npx vitest run               # 3 frontend tests
+npm run build                # TypeScript check + Vite build</pre>
+  <h2>What the tests cover</h2>
+  <table class="small">
+    <tr><th>Area</th><th>Tests</th></tr>
+    <tr><td>Engine (9)</td><td>Switching without overlap, idle cut-back, below-threshold idle, sleep gap, lock/unlock, exclusions, pause/resume, periodic checkpoints, clock going backwards.</td></tr>
+    <tr><td>Database</td><td>Idempotent migrations, app upsert, interval clipping, <code>end ≥ start</code>, crash recovery, range deletion, settings.</td></tr>
+    <tr><td>Stats</td><td>Totals, switches, longest block, hourly split, 23/25-hour DST days, midnight-spanning session, empty day, range merge, local-hour mapping.</td></tr>
+    <tr><td>Windows</td><td>Exe-name fallback, reading Notepad's real file description and icon, idle ≥ 0.</td></tr>
+    <tr><td>Widget</td><td>Parsing the saved position.</td></tr>
+    <tr><td>Frontend</td><td>Local-day bounds and duration formatting.</td></tr>
+  </table>
+  <h2>Debugging tips</h2>
+  <div class="grid2">
+    <div class="card"><h3>WebView2 0x800700AA</h3><span class="small">Killing a dev run can leave <code>msedgewebview2.exe</code> holding the data folder, so the next launch panics. End those processes, then relaunch.</span></div>
+    <div class="card"><h3>Inspect the data</h3><span class="small">Open <code>dayframe.db</code> with any SQLite browser while the app is closed. Times are UTC ms.</span></div>
+    <div class="card"><h3>DevTools</h3><span class="small">Right-click › Inspect in a dev build to see console errors and command calls.</span></div>
+    <div class="card"><h3>Logs</h3><span class="small">DB write failures in the tracker are logged with <code>log::error!</code> and never crash the loop.</span></div>
+  </div>
+  <h2>Commit conventions</h2>
+  <p class="small">Conventional Commit subjects with a body derived from the actual diff; one logical change per commit; work is shipped in chunks, each ending with an updated <code>SESSION_HANDOFF.md</code>.</p>
+  <div class="foot"><span>Dayframe · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<!-- ============ 13 ============ -->
+<section class="page">
+  <div class="kick">SECTION 13</div>
+  <h1>Privacy, troubleshooting, uninstall</h1>
+  <div class="grid2">
+    <div class="card"><h3>Collected</h3><ul class="small"><li>Executable path and its file description</li><li>Start and end time of each session</li><li>Whether you were idle, locked or paused (to stop counting)</li><li>The app's icon, cached for display</li></ul></div>
+    <div class="card"><h3>Never collected</h3><ul class="small"><li>Window titles, document or tab names</li><li>URLs or browsing history</li><li>Keystrokes or mouse positions</li><li>Screenshots or screen contents</li></ul></div>
+  </div>
+  <p class="small" style="margin-top:3mm">There is no network code. The Content Security Policy is <code>default-src 'self'</code> with only local images and IPC allowed, so even a bug in the UI could not send data out.</p>
+  <h2>Troubleshooting</h2>
+  <table class="small">
+    <tr><th>Symptom</th><th>Fix</th></tr>
+    <tr><td>Nothing is being recorded</td><td>Check the header pill. "Paused" → resume. "Excluded app" → un-exclude in Settings. Onboarding showing → consent was withdrawn.</td></tr>
+    <tr><td>Less time than expected</td><td>Idle threshold may be short; raise it. Time away from the keyboard past the threshold is removed on purpose.</td></tr>
+    <tr><td>An app shows as "Protected application"</td><td>It runs elevated (as administrator). Windows does not let a normal process read its path.</td></tr>
+    <tr><td>Widget not visible</td><td>Turn it on from the tray. If a fullscreen window is in front it hides until you leave fullscreen.</td></tr>
+    <tr><td>Widget off-screen after unplugging a monitor</td><td>The saved position is only reused if it lies on a connected monitor; otherwise it returns to the top-right.</td></tr>
+    <tr><td>Second window opens instead of the first</td><td>It shouldn't: single-instance focuses the running app. Check for an old version in Task Manager.</td></tr>
+  </table>
+  <h2>Uninstall</h2>
+  <ol class="flow">
+    <li>Quit from the tray.</li>
+    <li>Settings › Apps › Installed apps › Dayframe › Uninstall. Tick "Delete the application data" to remove the database too.</li>
+    <li>Or delete <code>%APPDATA%\com.dayframe.app</code> and <code>%LOCALAPPDATA%\com.dayframe.app</code> yourself.</li>
+  </ol>
+  <div class="foot"><span>Dayframe · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<!-- ============ 14 ============ -->
+<section class="page">
+  <div class="kick">SECTION 14</div>
+  <h1>Dayframe in plain English</h1>
+  <div class="lead">No code. If you can explain these paragraphs, you understand the app.</div>
+  <div class="say">Imagine someone sitting beside you with a stopwatch and a notebook. Every second they glance at your screen and note only the name of the program in front. When you switch programs they write down when the last one stopped and the new one started. If you stop touching the keyboard for a while, they cross out the time back to when you stopped. If you lock the PC or close the lid, they stop writing.</div>
+  <p>That is Dayframe. The "glance" is a Windows call that names the program in front. The "notebook" is a small database file in your user folder. Every 30 seconds the notebook is saved, so even if the power goes out you lose at most half a minute.</p>
+  <p>The dashboard is the notebook turned into pictures: a coloured strip for the day, bars for each app, and how busy each hour was. Analytics does the same over weeks.</p>
+  <p>The widget is a sticky note on your screen showing what the stopwatch is timing right now. The tray icon near the clock is how you reach the app when its window is closed; closing the window does not stop the stopwatch.</p>
+  <h2>Three promises</h2>
+  <div class="grid3">
+    <div class="card"><h3>It only looks at names</h3><span class="small">Never what is inside a window: no titles, pages or keys.</span></div>
+    <div class="card"><h3>It never counts away time</h3><span class="small">Idle, locked or asleep is not work, so it is not recorded.</span></div>
+    <div class="card"><h3>It never leaves your PC</h3><span class="small">There is nothing to upload to. Delete the file and it's gone.</span></div>
+  </div>
+  <div class="foot"><span>Dayframe · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<!-- ============ 15 ============ -->
+<section class="page">
+  <div class="kick">SECTION 15</div>
+  <h1>Words you need</h1>
+  <table class="small">
+    <tr><th>Word</th><th>Meaning here</th></tr>
+    <tr><td>Foreground window</td><td>The window receiving your keyboard input; the "app in front".</td></tr>
+    <tr><td>Executable / exe</td><td>The program file, e.g. <code>Code.exe</code>. Dayframe identifies apps by its path (<code>exe_key</code>).</td></tr>
+    <tr><td>File description</td><td>A friendly name stored inside an exe's version resource ("Visual Studio Code").</td></tr>
+    <tr><td>Session</td><td>One continuous stretch of one app, stored as a start and end time.</td></tr>
+    <tr><td>Interval</td><td>A session cut to a time window, e.g. one day.</td></tr>
+    <tr><td>Block</td><td>Neighbouring intervals of the same app merged for the timeline.</td></tr>
+    <tr><td>Checkpoint</td><td>Moving the open session's end forward on disk every 30 s.</td></tr>
+    <tr><td>Idle threshold</td><td>How long without input before time stops counting.</td></tr>
+    <tr><td>State machine</td><td>Code that keeps a little memory and reacts to inputs by rules; the engine.</td></tr>
+    <tr><td>Pure function</td><td>Same inputs, same outputs, no side effects. Easy to test.</td></tr>
+    <tr><td>Tauri</td><td>A framework for desktop apps with a Rust backend and a web UI.</td></tr>
+    <tr><td>WebView2</td><td>Microsoft Edge's engine embedded in apps; draws Dayframe's UI.</td></tr>
+    <tr><td>Command / invoke</td><td>A Rust function the UI can call, like a local API.</td></tr>
+    <tr><td>Event / emit</td><td>A message Rust pushes to the UI, e.g. <code>tracker://state</code>.</td></tr>
+    <tr><td>Capability</td><td>Tauri's allow-list of what each window may call.</td></tr>
+    <tr><td>CSP</td><td>Content Security Policy: rules for what the UI may load or connect to.</td></tr>
+    <tr><td>SQLite / WAL</td><td>An embedded database in one file; Write-Ahead Logging makes writes crash-safe.</td></tr>
+    <tr><td>Migration</td><td>A numbered schema change applied once, in order.</td></tr>
+    <tr><td>Mutex / atomic</td><td>Ways for threads to share data safely: a lock, or a single value changed in one step.</td></tr>
+    <tr><td>UTC ms</td><td>Milliseconds since 1970 in UTC; the same everywhere, no time zones.</td></tr>
+    <tr><td>DST</td><td>Daylight saving time; makes some local days 23 or 25 hours long.</td></tr>
+    <tr><td>NSIS</td><td>The tool that builds the Windows installer.</td></tr>
+    <tr><td>Tray</td><td>The icon area by the clock on the taskbar.</td></tr>
+  </table>
+  <div class="foot"><span>Dayframe · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<!-- ============ 16 ============ -->
+<section class="page">
+  <div class="kick">SECTION 16</div>
+  <h1>Follow the data</h1>
+  <div class="lead">One second in the life of Dayframe: you click into VS Code, and 30 seconds later it shows on the dashboard.</div>
+  <ol class="flow">
+    <li><b>Sample.</b> The tracker thread wakes. <code>GetForegroundWindow</code> → <code>GetWindowThreadProcessId</code> → <code>OpenProcess</code> (limited query rights) → <code>QueryFullProcessImageNameW</code> gives <code>C:\…\Code.exe</code>. The description "Visual Studio Code" comes from a cache, read once from the version resource.</li>
+    <li><b>Idle and lock.</b> <code>GetLastInputInfo</code> vs <code>GetTickCount</code> gives idle ms (wrap-safe). <code>OpenInputDesktop</code> named "Default" means unlocked.</li>
+    <li><b>Decide.</b> <code>engine.tick(sample)</code> sees a different app than before and returns <code>[Close(now), Open(Code, now)]</code>.</li>
+    <li><b>Write.</b> The loop locks the DB, upserts the app (category guessed as Development), ends the old row at <code>now</code> and inserts a new one starting at <code>now</code>.</li>
+    <li><b>Tell.</b> The new Snapshot (Active, "Visual Studio Code", start) differs from the last one, so <code>tracker://state</code> is emitted. The header pill and widget update; the widget timer starts ticking locally.</li>
+    <li><b>Keep.</b> Every 30 s a Checkpoint moves <code>ended_at</code> forward.</li>
+    <li><b>Show.</b> The dashboard's 30 s refresh calls <code>day_summary(from, to)</code> with local midnights. <code>db::intervals</code> clips sessions to the day; <code>stats::summarize</code> builds totals, per-app usage, hourly buckets and merged timeline blocks.</li>
+    <li><b>Icon.</b> The app list sees an app without an icon and calls <code>app_icons</code>. <code>ExtractIconExW</code> → bitmap → PNG, done outside the DB lock, then cached forever.</li>
+  </ol>
+  <h2>And when you walk away</h2>
+<pre class="t">t = 10:00:00   last input
+t = 10:05:00   idle_ms = 300000 ≥ threshold → Close(end = 10:00:00)
+               status Idle; snapshot emitted; widget dot turns grey
+t = 10:12:40   input again, same app → Open(Code, 10:12:40)</pre>
+  <p class="small">The 12 minutes 40 seconds away are never written, and the 5 minutes it took to notice are taken back.</p>
+  <div class="foot"><span>Dayframe · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<!-- ============ 17 ============ -->
+<section class="page">
+  <div class="kick">SECTION 17</div>
+  <h1>Engineering ideas it shows</h1>
+  <div class="grid2">
+    <div class="card"><h3>Functional core, imperative shell</h3><span class="small">The engine and stats are pure; Win32, SQLite and Tauri sit at the edges. Most bugs are caught by fast tests on the core.</span></div>
+    <div class="card"><h3>Store facts, derive views</h3><span class="small">Only sessions are stored. Totals, switches, hourly charts and analytics are computed on read, so a change in how they're shown never needs a migration.</span></div>
+    <div class="card"><h3>Durable by default</h3><span class="small">Rows are always closed and checkpointed; recovery is a one-line normalisation, not a repair job.</span></div>
+    <div class="card"><h3>Bounded loss</h3><span class="small">A clear, testable promise: a crash loses at most 30 s. Cheaper than writing every second, safer than writing on quit.</span></div>
+    <div class="card"><h3>Ordering under a lock</h3><span class="small">Deletion and the tracker's "forget" happen under the same DB lock, closing a race that would resurrect deleted time.</span></div>
+    <div class="card"><h3>Push, don't poll</h3><span class="small">The UI gets <code>tracker://state</code> only when something changes; the dashboard refreshes only while visible; the widget fetches totals only while expanded.</span></div>
+    <div class="card"><h3>Calendar at the edge</h3><span class="small">UTC in storage; local days computed by the UI and passed in. DST becomes a bucket count, not a bug.</span></div>
+    <div class="card"><h3>Pay for what you use</h3><span class="small">Recharts is lazy-loaded; the widget window is created only when enabled; icons are extracted once.</span></div>
+    <div class="card"><h3>Least privilege</h3><span class="small">Limited process-query rights, no titles, a strict CSP, per-window capabilities, consent before the first sample.</span></div>
+    <div class="card"><h3>Append-only migrations</h3><span class="small">Versioned with <code>user_version</code>; old databases upgrade in order, tested to be idempotent.</span></div>
+  </div>
+  <div class="foot"><span>Dayframe · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<!-- ============ 18 ============ -->
+<section class="page">
+  <div class="kick">SECTION 18</div>
+  <h1>Hard problems and limits</h1>
+  <table class="small">
+    <tr><th>Problem</th><th>What Dayframe does</th><th>Limit</th></tr>
+    <tr><td>Detecting sleep</td><td>A gap of more than 15 s between 1 s ticks means the machine was suspended; close at the last tick.</td><td>Not using power broadcast messages; a 15 s system freeze also counts as a gap.</td></tr>
+    <tr><td>Detecting lock</td><td>If the input desktop isn't "Default" (or can't be opened), the session is locked.</td><td>Not using WTS session notifications; UAC prompts also count as locked, briefly.</td></tr>
+    <tr><td>Idle while reading</td><td>Below the threshold, no input still counts as use.</td><td>A long video without touching anything ends at the threshold; raise it if needed.</td></tr>
+    <tr><td>Elevated apps</td><td>Recorded as one "Protected application".</td><td>Can't tell elevated apps apart without running elevated, which Dayframe won't.</td></tr>
+    <tr><td>Midnight</td><td>Sessions are clipped to each day's bounds.</td><td>—</td></tr>
+    <tr><td>DST</td><td>23/25 buckets; local hour mapping in analytics.</td><td>The 7-day strip shows totals only, unaffected.</td></tr>
+    <tr><td>Fullscreen</td><td>Foreground rect covers its monitor; desktop and shell windows excluded.</td><td>A borderless maximised window that exactly covers the screen also hides the widget.</td></tr>
+    <tr><td>Window creation</td><td>The widget is created from setup, the tray or an async command.</td><td>Creating a window from a synchronous command deadlocks WebView2 on Windows.</td></tr>
+    <tr><td>Multiple monitors</td><td>The widget's saved position is reused only if it lies on a connected monitor.</td><td>No per-monitor memory yet.</td></tr>
+    <tr><td>Browsers</td><td>Counted as one app.</td><td>By design: no tab titles or URLs, so no per-site breakdown.</td></tr>
+  </table>
+  <h2>Not built yet</h2>
+  <ul class="small"><li>Projects: the table exists; there is no UI to assign time to projects.</li><li>Export to CSV.</li><li>Goals and daily limits.</li><li>macOS and Linux.</li></ul>
+  <div class="foot"><span>Dayframe · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<!-- ============ 19 ============ -->
+<section class="page">
+  <div class="kick">SECTION 19</div>
+  <h1>Interview questions and answers</h1>
+  <div class="qa">
+    <div><b>Why Tauri and not Electron?</b><p>Tauri uses the WebView2 already in Windows, so the installer is under 2 MB and idle memory is about 32 MB. The backend is Rust, which suits Win32 calls and a long-running background thread.</p></div>
+    <div><b>How do you avoid counting idle time?</b><p>When idle reaches the threshold, the engine closes the session at <code>now − idle_ms</code>: the moment input stopped. So the time spent waiting to notice is removed as well.</p></div>
+    <div><b>What happens if the app crashes?</b><p>Sessions are stored closed and checkpointed every 30 s. On startup recovery only recomputes durations. Worst case: 30 s lost.</p></div>
+    <div><b>How do you detect sleep without power events?</b><p>The loop ticks every second. If more than 15 s passed, or the clock went backwards, the machine was suspended; the session ends at the last tick.</p></div>
+    <div><b>How do you handle sessions across midnight and DST?</b><p>Store UTC ms. The UI computes local midnights and passes bounds; sessions are clipped to them. Bucket count equals the day's real length; analytics map buckets to local hours with chrono.</p></div>
+    <div><b>How did you make the tracker testable?</b><p>A pure state machine takes a sample struct and returns actions. Tests feed fake timestamps; Win32 and SQLite are outside it.</p></div>
+    <div><b>Describe a concurrency bug you prevented.</b><p>Deleting data while a session is open could let the next checkpoint extend a deleted row. The delete sets a flag under the DB lock; the tracker checks it under the same lock and forgets its session first.</p></div>
+    <div><b>Why not store totals per day?</b><p>Derived data goes stale when you delete or re-categorise. Sessions are the single source of truth; aggregation is fast enough on read with indexes on start and end.</p></div>
+    <div><b>How is privacy enforced, not just promised?</b><p>The sampler never calls title APIs; there's no network code; the CSP blocks outbound connections; tracking is gated on stored consent.</p></div>
+    <div><b>How does the widget hide in fullscreen?</b><p>While enabled, each tick compares the foreground window's rect with its monitor's rect (ignoring the desktop and shell). Changes toggle the window's visibility.</p></div>
+    <div><b>What would you do next?</b><p>WTS and power notifications instead of heuristics, projects, CSV export, and per-monitor widget positions.</p></div>
+  </div>
+  <div class="foot"><span>Dayframe · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<!-- ============ 20 ============ -->
+<section class="page">
+  <div class="kick">SECTION 20</div>
+  <h1>Cheat sheet</h1>
+  <div class="grid2">
+    <div>
+      <h2 style="margin-top:0">Commands</h2>
+<pre class="t">npm install
+npm run tauri dev
+npm run tauri build
+npm run build
+npx vitest run
+cd src-tauri &amp;&amp; cargo test</pre>
+      <h2>Numbers</h2>
+      <table class="small">
+        <tr><td>Tick</td><td>1 s</td></tr>
+        <tr><td>Checkpoint</td><td>30 s</td></tr>
+        <tr><td>Sleep gap</td><td>&gt; 15 s</td></tr>
+        <tr><td>Idle default</td><td>5 min (1–120)</td></tr>
+        <tr><td>Timeline merge</td><td>gap ≤ 2 s</td></tr>
+        <tr><td>Dashboard refresh</td><td>30 s, visible only</td></tr>
+        <tr><td>Widget</td><td>248×44 / 280×236</td></tr>
+        <tr><td>Analytics range</td><td>≤ 92 days</td></tr>
+        <tr><td>Day range</td><td>≤ 26 h</td></tr>
+      </table>
+    </div>
+    <div>
+      <h2 style="margin-top:0">Tauri commands</h2>
+      <p class="small"><code>app_info</code> · <code>tracker_state</code> · <code>day_summary</code> · <code>range_totals</code> · <code>range_summary</code> · <code>app_icons</code> · <code>get_settings</code> · <code>set_tracking_consent</code> · <code>set_tracking_paused</code> · <code>set_theme</code> · <code>set_idle_threshold</code> · <code>set_autostart</code> · <code>list_apps</code> · <code>set_app_excluded</code> · <code>set_app_category</code> · <code>delete_range</code> · <code>delete_all_data</code> · <code>set_widget_enabled</code> · <code>set_widget_expanded</code> · <code>save_widget_position</code> · <code>open_dashboard</code></p>
+      <h2>Events</h2>
+      <p class="small"><code>tracker://state</code> (snapshot on change) · <code>navigate</code> (tray → Settings) · <code>theme</code> (keeps windows in sync)</p>
+      <h2>Settings keys</h2>
+      <p class="small"><code>tracking_consented</code> · <code>theme</code> · <code>idle_threshold_ms</code> · <code>widget_enabled</code> · <code>widget_position</code></p>
+      <h2>Practice</h2>
+      <ol class="flow small">
+        <li>Add a test: idle that ends exactly at the threshold.</li>
+        <li>Add a "Copy as CSV" button for a day.</li>
+        <li>Replace the sleep heuristic with <code>WM_POWERBROADCAST</code>.</li>
+        <li>Build a projects picker on the timeline.</li>
+      </ol>
+    </div>
+  </div>
+  <div class="foot"><span>Dayframe · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<script>
+// Free space above each footer (px); negative = overflow. Read by print.ps1 via --dump-dom.
+addEventListener("load", () => {
+  const r = [...document.querySelectorAll(".page")].map((p, i) => {
+    const f = p.querySelector(".foot").getBoundingClientRect().top;
+    const kids = [...p.children].filter(c => !c.classList.contains("foot") && !c.classList.contains("meta"));
+    return (i + 1) + ":" + Math.round(f - kids.pop().getBoundingClientRect().bottom);
+  });
+  document.body.dataset.free = r.join(" ");
+});
+</script>
+</body></html>

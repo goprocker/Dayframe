@@ -6,7 +6,7 @@ All notable changes to the Dayframe landing page. Versions follow [SemVer](https
 
 ### Added
 - Privacy and Terms pages, linked from the footer.
-- Download count in the Get started card, read from the public Abacus counter; hidden while the count is zero or unavailable.
+- Download count in the Get started card, combining website clicks (Abacus) with GitHub Releases installer downloads; hidden while the total is zero or unavailable.
 
 ### Changed
 - Site version is now 1.0.0 to match the Dayframe 1.0.0 app release; installer links point to `Dayframe_1.0.0_x64-setup.exe`.

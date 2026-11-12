@@ -34,20 +34,29 @@ export function initDownloads() {
   );
 }
 
-// Show the public download total wherever [data-downloads] appears.
-// Hidden until a count above zero arrives, so a failed fetch leaves no trace.
-export function showDownloadCount() {
+// Show the download total wherever [data-downloads] appears: website clicks
+// (Abacus) plus installer downloads from GitHub Releases. Hidden until the
+// total is above zero, so failed fetches leave no trace.
+const SITE = "https://abacus.jasoncameron.dev/get/dayframe-site/downloads";
+const GH = "https://api.github.com/repos/goprocker/Dayframe/releases";
+
+const get = (url, pick) =>
+  fetch(url).then((r) => (r.ok ? r.json() : null)).then(pick).catch(() => 0);
+
+export async function showDownloadCount() {
   const els = document.querySelectorAll("[data-downloads]");
   if (!els.length) return;
-  fetch("https://abacus.jasoncameron.dev/get/dayframe-site/downloads")
-    .then((r) => (r.ok ? r.json() : null))
-    .then((d) => {
-      const n = d && Number(d.value);
-      if (!n) return;
-      els.forEach((el) => {
-        el.querySelector("span").textContent = n.toLocaleString();
-        el.hidden = false;
-      });
-    })
-    .catch(() => {});
+  const [site, gh] = await Promise.all([
+    get(SITE, (d) => Number(d?.value) || 0),
+    get(GH, (rs) =>
+      (rs || []).flatMap((r) => r.assets || [])
+        .filter((a) => a.name.endsWith(".exe"))
+        .reduce((n, a) => n + a.download_count, 0)),
+  ]);
+  const n = site + gh;
+  if (!n) return;
+  els.forEach((el) => {
+    el.querySelector("span").textContent = n.toLocaleString();
+    el.hidden = false;
+  });
 }

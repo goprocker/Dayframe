@@ -59,3 +59,52 @@ export const stats = {
     invoke<number[]>("range_totals", { bounds }),
   icons: () => invoke<Record<string, string>>("app_icons"),
 };
+
+export type Theme = "system" | "dark" | "light";
+
+export interface Settings {
+  consented: boolean;
+  theme: Theme;
+  idleThresholdMinutes: number;
+  autostart: boolean;
+  dataDir: string;
+  version: string;
+  categories: string[];
+}
+
+export interface AppRow {
+  id: number;
+  name: string;
+  path: string;
+  category: string;
+  excluded: boolean;
+  firstSeenAt: number;
+}
+
+export const settings = {
+  get: () => invoke<Settings>("get_settings"),
+  setTheme: (theme: Theme) => invoke<void>("set_theme", { theme }),
+  setIdleThreshold: (minutes: number) =>
+    invoke<void>("set_idle_threshold", { minutes }),
+  setAutostart: (enabled: boolean) =>
+    invoke<void>("set_autostart", { enabled }),
+  listApps: () => invoke<AppRow[]>("list_apps"),
+  setAppExcluded: (id: number, excluded: boolean) =>
+    invoke<void>("set_app_excluded", { id, excluded }),
+  setAppCategory: (id: number, category: string) =>
+    invoke<void>("set_app_category", { id, category }),
+  deleteRange: (from: number, to: number) =>
+    invoke<void>("delete_range", { from, to }),
+  deleteAll: () => invoke<void>("delete_all_data"),
+  onNavigate: (cb: (view: string) => void): Promise<UnlistenFn> =>
+    listen<string>("navigate", (e) => cb(e.payload)),
+};
+
+/** Apply a theme to <html>; "system" follows the OS preference. */
+export function applyTheme(theme: Theme) {
+  const dark =
+    theme === "dark" ||
+    (theme === "system" &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches);
+  document.documentElement.dataset.theme = dark ? "dark" : "light";
+}

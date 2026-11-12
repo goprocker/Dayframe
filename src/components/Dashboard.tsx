@@ -8,6 +8,7 @@ import {
   Pause,
   Play,
   Repeat,
+  Settings as SettingsIcon,
   Timer,
 } from "lucide-react";
 import { api, stats, type DaySummary, type TrackerState } from "../lib/api";
@@ -35,7 +36,7 @@ const STATUS_LABEL: Record<string, string> = {
   unknown: "Waiting",
 };
 
-export function Dashboard() {
+export function Dashboard({ onOpenSettings }: { onOpenSettings: () => void }) {
   const [date, setDate] = useState(() => startOfDay(new Date()));
   const [day, setDay] = useState<DaySummary | null>(null);
   const [week, setWeek] = useState<number[]>([]);
@@ -145,6 +146,9 @@ export function Dashboard() {
             )}
           </div>
           <TrackerPill tracker={tracker} />
+          <IconBtn label="Settings" onClick={onOpenSettings}>
+            <SettingsIcon size={16} />
+          </IconBtn>
         </header>
 
         <h2 className="text-2xl font-semibold">{formatDayLabel(date)}</h2>
@@ -316,16 +320,6 @@ function Tile(props: { icon: ReactNode; label: string; value: string; sub?: stri
 
 function TrackerPill({ tracker }: { tracker: TrackerState | null }) {
   if (!tracker) return null;
-  if (!tracker.consented) {
-    return (
-      <button
-        className="rounded-full border border-line bg-surface-2 px-3 py-1 text-sm hover:text-accent"
-        onClick={() => api.setTrackingConsent(true)}
-      >
-        Enable tracking (dev)
-      </button>
-    );
-  }
   const status = tracker.status ?? "unknown";
   const dot =
     status === "active"
@@ -355,8 +349,8 @@ function TrackerPill({ tracker }: { tracker: TrackerState | null }) {
 function EmptyState({ tracker, isToday }: { tracker: TrackerState | null; isToday: boolean }) {
   let msg = "No activity was recorded on this day.";
   if (isToday) {
-    msg = !tracker?.consented
-      ? "Tracking is off. Enable it to start seeing where your day goes."
+    msg = tracker?.paused
+      ? "Tracking is paused. Resume it to keep recording today."
       : "Nothing yet today. Keep working and your apps will appear here.";
   }
   return (

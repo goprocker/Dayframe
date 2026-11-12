@@ -1,0 +1,15 @@
+{
+  "name": "dayframe-landing",
+  "private": true,
+  "version": "0.9.0",
+  "description": "Marketing landing page for Dayframe",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^8.3.8"
+  }
+}

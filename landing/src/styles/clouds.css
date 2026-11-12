@@ -1,0 +1,47 @@
+/*
+ * Clouds are painted once into a <canvas> by src/clouds.js; CSS only
+ * positions and moves them. Each cloud is its own compositor layer, so
+ * drift and parallax never trigger a repaint.
+ */
+.cloud {
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+  animation: cloud-drift var(--drift, 60s) ease-in-out infinite alternate;
+  will-change: transform, translate;
+}
+.cloud canvas { position: absolute; display: block; }
+
+/* distant clouds: lighter */
+.cloud.far { opacity: 0.75; }
+
+/* hanging clouds (under a light section): mirror vertically */
+.cloud.flip { transform: scaleY(-1); }
+
+@keyframes cloud-drift {
+  from { translate: calc(var(--dx, 40px) * -1) 0; }
+  to   { translate: var(--dx, 40px) 0; }
+}
+
+/*
+ * Cloud bands between sections. A soft fill covers the light side so
+ * the bank melts into it; clouds sit across the seam.
+ */
+.cloud-band {
+  position: relative;
+  z-index: 3;
+  height: 280px;
+  margin: -150px 0 -130px;
+  pointer-events: none;
+}
+.cloud-band::before {
+  content: "";
+  position: absolute;
+  left: 0; right: 0;
+  bottom: 0;
+  height: 55%;
+  background: linear-gradient(180deg, rgba(244, 246, 248, 0), var(--paper) 45%);
+}
+.cloud-band.flip::before { top: 0; bottom: auto; background: linear-gradient(0deg, rgba(230, 238, 244, 0), #e6eef4 45%); }
+/* bands stay still: fewer moving layers */
+.cloud-band .cloud { animation: none; will-change: auto; }

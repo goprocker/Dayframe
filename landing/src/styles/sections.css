@@ -1,0 +1,320 @@
+/* ---------- hero ---------- */
+/* Text block on top, monitor centred in the space below it. Nothing on the
+   monitor moves; only the meadow behind it has parallax. */
+.hero {
+  height: 100vh;
+  min-height: 600px;
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center;
+  padding: clamp(88px, 13vh, 130px) 16px clamp(30px, 6vh, 64px);
+  /* the meadow also sits on the hero itself, so no edge can ever show bare blue
+     (the parallax layers sit on top and move; this one never does) */
+  background: #4f88b0 url("/img/hero-meadow.jpg") 50% 62% / cover no-repeat;
+}
+/* soft dark halo behind the text so it reads on the bright sky */
+.hero::before {
+  content: ""; position: absolute; z-index: 1; pointer-events: none;
+  left: 50%; top: clamp(40px, 8vh, 90px); width: min(1100px, 110vw); height: clamp(260px, 42vh, 400px);
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse at 50% 45%, rgba(6, 26, 52, 0.5) 0%, rgba(6, 26, 52, 0.28) 40%, rgba(6, 26, 52, 0) 70%);
+}
+.hero h1 {
+  font-family: var(--serif); font-weight: 400;
+  font-size: clamp(44px, 6vw, 88px); line-height: 1.02; letter-spacing: -0.03em;
+  text-shadow: 0 2px 30px rgba(4, 22, 46, 0.55), 0 1px 2px rgba(4, 22, 46, 0.4);
+}
+.hero h1 em { font-style: italic; }
+.hero .sub {
+  margin-top: clamp(14px, 2.4vh, 22px);
+  font-size: clamp(16px, 1.4vw, 20px); font-weight: 500; letter-spacing: -0.01em; line-height: 1.4;
+  color: #fff; max-width: 34ch;
+  text-shadow: 0 1px 16px rgba(4, 22, 46, 0.7), 0 1px 2px rgba(4, 22, 46, 0.5);
+}
+@media (max-height: 760px) {
+  .hero h1 { font-size: min(6vw, 8.5vh); }
+}
+
+/* Retro TV (dark grey plastic, glowing blue CRT), centred under the text.
+   The screen plays the video; see video.js. */
+.hero > .monitor {
+  margin: auto 0; /* centres vertically in the remaining space */
+  width: min(460px, 82vw, calc((100vh - 330px) * 1.15));
+  flex: none; z-index: 3 !important;
+  filter: drop-shadow(0 34px 40px rgba(0, 10, 30, 0.5));
+}
+.tv-body {
+  position: relative;
+  border-radius: 22px / 20px;
+  padding: 5% 5% 3.5%;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0) 18%),
+    linear-gradient(180deg, #6b6e76 0%, #55585f 45%, #44464c 100%);
+  box-shadow:
+    inset 0 2px 0 rgba(255,255,255,0.35), inset 0 -3px 0 rgba(0,0,0,0.35),
+    inset 3px 0 0 rgba(255,255,255,0.06), inset -3px 0 0 rgba(0,0,0,0.2),
+    0 2px 0 #2c2e33;
+}
+/* recessed frame around the tube */
+.tv-bezel {
+  padding: 4.2%;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #3a3c42, #4a4d54 60%, #3e4046);
+  box-shadow: inset 0 4px 10px rgba(0,0,0,0.6), inset 0 -2px 2px rgba(255,255,255,0.12), 0 1px 0 rgba(255,255,255,0.2);
+}
+/* the bulging CRT */
+.tv .screen {
+  position: relative; overflow: hidden; aspect-ratio: 16 / 10.5;
+  border-radius: 14% / 18%;
+  background: #1d23d8;
+  box-shadow: 0 0 0 3px #22242a, 0 0 28px rgba(60, 80, 255, 0.55), inset 0 0 30px rgba(0, 0, 40, 0.7);
+}
+.tv .screen .screen-video { width: 100%; height: 100%; object-fit: cover; display: block; background: #0d0e12; }
+.tv .glass {
+  position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
+  background:
+    radial-gradient(ellipse 120% 90% at 35% 0%, rgba(255,255,255,0.22), rgba(255,255,255,0) 45%),
+    repeating-linear-gradient(0deg, rgba(0,0,0,0.12) 0 1px, rgba(0,0,0,0) 1px 3px),
+    radial-gradient(ellipse at center, rgba(0,0,0,0) 55%, rgba(0,0,20,0.55) 100%);
+  box-shadow: inset 0 0 24px rgba(0,0,30,0.7), inset 0 0 0 1px rgba(255,255,255,0.08);
+}
+/* control strip */
+.tv-panel {
+  display: flex; align-items: center; gap: 3%;
+  margin-top: 4.5%; padding: 3% 2% 3%;
+  border-top: 1px solid rgba(0,0,0,0.35); box-shadow: 0 -1px 0 rgba(255,255,255,0.08);
+}
+.tv-btn {
+  width: 7%; aspect-ratio: 2.4; border-radius: 4px; flex: none;
+  background: linear-gradient(180deg, #2f3136, #26282c);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 1px 0 rgba(255,255,255,0.1), inset 0 0 0 1px #1c1d21;
+  position: relative;
+}
+.tv-btn::after { content: ""; position: absolute; left: 40%; right: 40%; top: 42%; height: 16%; background: #888b92; border-radius: 1px; }
+.tv-btn.long { width: 9%; background: linear-gradient(180deg, #7a7d84, #5d6066); }
+.tv-btn.long::after { display: none; }
+.tv-deck {
+  flex: 1; height: 26px; border-radius: 6px; display: flex; align-items: center; justify-content: center; gap: 10%;
+  background: linear-gradient(180deg, #2a2c31, #33363b);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.6), 0 1px 0 rgba(255,255,255,0.12);
+}
+.tv-deck i { width: 7px; height: 7px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #9a9da4, #45474d); }
+.tv-knob {
+  width: 9%; aspect-ratio: 1; border-radius: 50%; flex: none;
+  background:
+    repeating-conic-gradient(from 0deg, rgba(255,255,255,0.18) 0 4deg, rgba(0,0,0,0.12) 4deg 8deg),
+    radial-gradient(circle at 40% 35%, #d9dce2, #8d9097 60%, #5c5f66);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.5), inset 0 0 0 2px rgba(0,0,0,0.25);
+}
+.tv-knob.blue {
+  background:
+    repeating-conic-gradient(from 0deg, rgba(255,255,255,0.2) 0 4deg, rgba(0,0,0,0.12) 4deg 8deg),
+    radial-gradient(circle at 40% 35%, #8a9bff, #3340ff 55%, #1a22b8);
+  box-shadow: 0 0 14px rgba(70, 90, 255, 0.6), 0 2px 4px rgba(0,0,0,0.5), inset 0 0 0 2px rgba(0,0,40,0.3);
+}
+.tv-lower { display: flex; align-items: center; gap: 6%; padding: 0 2% 1%; }
+.tv-knob.small { width: 6.5%; }
+.tv-grille { flex: 1; display: grid; gap: 5px; }
+.tv-grille i { height: 3px; border-radius: 2px; background: #2c2e33; box-shadow: 0 1px 0 rgba(255,255,255,0.1); }
+
+
+/* ---------- hero scene: painted meadow with depth ---------- */
+/* Two copies of the image: the back one moves a little, the front copy is
+   masked to the foreground flowers and moves more, so the meadow reads as
+   3D when the pointer moves or the page scrolls. Vars set by src/hero.js. */
+.hero { --mx: 0; --my: 0; --sp: 0; }
+.hero > .scene { position: absolute !important; inset: 0; z-index: 0 !important; overflow: hidden; }
+/* foreground copy sits above the monitor, so the PC stands *in* the meadow */
+.hero > .scene-fore { z-index: 4 !important; pointer-events: none; }
+.scene .layer { position: absolute; inset: -8%; will-change: transform; }
+.scene .layer img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 62%; }
+.scene .back {
+  transform: translate3d(calc(var(--mx) * -10px), calc(var(--my) * -6px), 0) scale(calc(1.04 + var(--sp) * 0.12));
+  animation: scene-breathe 24s ease-in-out infinite alternate;
+}
+.scene .front {
+  transform-origin: 50% 100%;
+  transform: translate3d(calc(var(--mx) * -34px), calc(var(--my) * -14px + var(--sp) * 60px), 0) scale(calc(1.07 + var(--sp) * 0.3));
+  /* only the nearest flowers: they overlap the bottom of the monitor */
+  -webkit-mask-image: linear-gradient(180deg, transparent 80%, #000 91%);
+  mask-image: linear-gradient(180deg, transparent 80%, #000 91%);
+}
+.scene .petals { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.scene .shade {
+  position: absolute; inset: 0; pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(8, 38, 78, 0.55) 0%, rgba(8, 38, 78, 0.25) 30%, rgba(8, 38, 78, 0) 50%),
+    radial-gradient(ellipse at 50% 30%, rgba(8, 38, 78, 0.18), transparent 60%);
+}
+/* meadow melts into the next section's sky, underneath the monitor */
+.scene .fade { position: absolute; left: 0; right: 0; bottom: 0; height: 12%; pointer-events: none; background: linear-gradient(180deg, rgba(63, 122, 160, 0) 0%, rgba(63, 122, 160, 0.55) 55%, #3f7aa0 100%); }
+@keyframes scene-breathe { from { scale: 1; } to { scale: 1.035; } }
+
+
+/* ---------- tour: tall cards ---------- */
+.tour { background: linear-gradient(180deg, #3f7aa0 0%, #4a85ad 50%, #5a90b6 100%); padding: 0 var(--gutter); }
+/* pinned while the reel slides sideways (wide screens) */
+@media (min-width: 761px) {
+  /* cards sized so heading + cards always fit one screen below the nav */
+  .tour .tall { flex-basis: clamp(170px, calc((100vh - 330px) * 0.6), 290px); }
+  .tour > .tour-pin { position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; justify-content: center; padding-top: 84px; }
+  .tour .head { margin-bottom: clamp(20px, 4vh, 48px); }
+  .tour .reel { overflow: visible; scroll-snap-type: none; will-change: transform; }
+}
+@media (max-width: 760px) { .tour { padding: 120px var(--gutter) 200px; } }
+.reel {
+  display: flex; gap: 22px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
+  margin: 0 calc(-1 * var(--gutter)); padding: 8px var(--gutter) 30px;
+}
+.reel::-webkit-scrollbar { display: none; }
+.tall { flex: 0 0 clamp(230px, 22vw, 300px); scroll-snap-align: start; background: #fff; border-radius: 18px; padding: 6px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.18); }
+.tall .img { aspect-ratio: 9 / 14; border-radius: 13px; overflow: hidden; background: #14151b; position: relative; }
+.tall .img img { width: 100%; height: 100%; object-fit: cover; }
+.tall .lbl { color: #000; font-size: 14px; font-weight: 600; letter-spacing: -0.03em; padding: 10px 6px 6px; }
+.play { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 54px; height: 54px; border-radius: 50%; background: #000; display: grid; place-items: center; }
+.play::after { content: ""; border-left: 14px solid #fff; border-top: 9px solid transparent; border-bottom: 9px solid transparent; margin-left: 4px; }
+
+/* ---------- screens: wide cards on white ---------- */
+.screens { background: linear-gradient(180deg, var(--paper) 0%, #e6eef4 100%); color: #0f1a24; padding: 200px var(--gutter); }
+.screens .head p { color: #4b5260; }
+.wide-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; max-width: 1100px; margin: 0 auto; }
+@media (max-width: 760px) { .wide-grid { grid-template-columns: 1fr; } }
+.wide { background: #fff; border-radius: 22px; padding: 8px 8px 14px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12); }
+.wide .img { aspect-ratio: 16 / 10; border-radius: 16px; overflow: hidden; background: #14151b; }
+.wide .img img { width: 100%; height: 100%; object-fit: cover; object-position: top left; }
+.wide .lbl { color: #000; font-weight: 600; font-size: 15px; letter-spacing: -0.03em; padding: 12px 8px 0; }
+.wide .lbl span { display: block; font-weight: 500; color: #5b6470; font-size: 14px; margin-top: 3px; }
+
+/* ---------- features: tilted glass ---------- */
+.features { background: linear-gradient(180deg, #4f88b0 0%, #7aa6c4 100%); padding-top: 220px; padding-bottom: 160px; }
+.glass-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px; max-width: 1240px; margin: 0 auto; }
+@media (max-width: 1000px) { .glass-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .glass-grid { grid-template-columns: 1fr; } }
+.gcard {
+  will-change: transform;
+  background: linear-gradient(160deg, rgba(40, 90, 135, 0.62), rgba(30, 70, 110, 0.5)); border: 1px solid var(--glass-b);
+  border-radius: 22px; padding: 26px 24px 34px; min-height: 260px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 20px 40px rgba(0, 0, 0, 0.12);
+}
+.gcard:nth-child(1) { transform: rotate(-4deg); }
+.gcard:nth-child(2) { transform: rotate(-2deg) translateY(-12px); }
+.gcard:nth-child(3) { transform: rotate(3deg); }
+.gcard:nth-child(4) { transform: rotate(-3deg) translateY(-10px); }
+.gcard svg { width: 26px; height: 26px; stroke: #fff; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.gcard h3 { font-family: var(--serif); font-weight: 400; font-size: 28px; letter-spacing: -0.03em; margin: 30px 0 10px; }
+.gcard p { font-size: 14px; line-height: 1.5; color: #fff; text-shadow: 0 1px 8px rgba(15, 45, 75, 0.35); }
+.gcard h3 { text-shadow: 0 1px 12px rgba(15, 45, 75, 0.3); }
+
+/* ---------- timeline ---------- */
+.timeline { padding-bottom: 180px; background: linear-gradient(180deg, #6b9cbf 0%, #8fb0c8 30%, #c3cdcc 60%, var(--dusk) 100%); }
+.giant { will-change: transform; text-shadow: 0 3px 0 rgba(70, 100, 140, 0.35), 0 10px 40px rgba(30, 60, 100, 0.35); font-family: var(--serif); font-weight: 400; text-align: center; font-size: clamp(64px, 13vw, 200px); line-height: 0.9; letter-spacing: -0.06em; }
+.giant em { font-style: italic; }
+.stack { max-width: 900px; margin: -40px auto 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: 28px; }
+@media (max-width: 700px) { .stack { grid-template-columns: 1fr; } }
+.step { background: #fff; color: #1d2330; border-radius: 22px; padding: 22px 22px 0; overflow: hidden; box-shadow: 0 30px 50px rgba(40, 50, 70, 0.25); }
+.step:nth-child(odd) { transform: rotate(-5deg); }
+.step:nth-child(even) { transform: rotate(4deg) translateY(50px); }
+.step h4 { font-size: 20px; font-weight: 700; letter-spacing: -0.03em; color: #1c2580; }
+.step p { font-size: 15px; line-height: 1.45; margin-top: 8px; color: #3a4150; }
+.step .art { margin: 18px -22px 0; height: 170px; position: relative; overflow: hidden; }
+.step .art img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.04); transition: transform 1.2s cubic-bezier(0.2, 0.7, 0.2, 1); }
+.step:hover .art img { transform: scale(1.1); }
+.art.a1 img { object-position: 50% 55%; }
+.art.a2 img { object-position: 50% 80%; }
+.art.a3 img { object-position: 50% 35%; }
+.art.a4 img { object-position: 45% 60%; }
+
+/* ---------- download ---------- */
+.contact { background: linear-gradient(180deg, var(--dusk), #6d9cbd 30%, #2d6c9a); padding-top: 180px; }
+.dl { max-width: 1000px; margin: 0 auto; background: #fff; color: #1d2330; border-radius: 22px; display: grid; grid-template-columns: 280px 1fr; overflow: hidden; box-shadow: 0 30px 60px rgba(0, 0, 0, 0.2); }
+@media (max-width: 760px) { .dl { grid-template-columns: 1fr; } }
+.dl aside { padding: 28px; border-right: 1px solid #eceef2; }
+.dl aside img { width: 44px; height: 44px; }
+.dl .muted { margin-top: 12px; font-size: 14px; color: #6b7280; }
+.dl aside h3 { font-size: 22px; margin: 14px 0 6px; letter-spacing: -0.02em; }
+.dl aside li { list-style: none; font-size: 14px; color: #4b5260; margin: 10px 0; }
+.dl .right { padding: 28px; display: flex; flex-direction: column; gap: 18px; justify-content: center; }
+.dl .right h4 { font-family: var(--serif); font-weight: 400; font-size: 40px; letter-spacing: -0.03em; line-height: 1; }
+.dl .right .row { display: flex; gap: 12px; flex-wrap: wrap; }
+.chk { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px 18px; font-size: 14px; color: #3a4150; }
+.chk div::before { content: "✓ "; color: var(--accent); font-weight: 700; }
+.chk div.no::before { content: "✕ "; color: #d35; }
+
+/* ---------- footer ---------- */
+footer { position: relative; padding: 60px var(--gutter) 50px; background: #2d6c9a; overflow: hidden; }
+footer .ghost { position: absolute; left: 50%; top: 48%; transform: translate(-50%, -50%); font-weight: 700; font-size: clamp(110px, 22vw, 340px); letter-spacing: -0.06em; color: #fff; opacity: 0.55; white-space: nowrap; pointer-events: none; z-index: 1; }
+.fcard { position: relative; z-index: 2; max-width: 1120px; margin: 0 auto; background: rgba(232, 240, 246, 0.9); border: 1px solid rgba(255, 255, 255, 0.35); border-radius: 22px; padding: 40px 46px 28px; color: #0f1a24; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12); }
+@media (max-width: 600px) { .fcard { padding: 28px 22px; } }
+.fcard .top { display: flex; justify-content: space-between; gap: 30px; flex-wrap: wrap; }
+.fcard b { font-size: 24px; letter-spacing: -0.02em; text-transform: uppercase; }
+.fcard .tag { margin-top: 6px; font-size: 17px; line-height: 1.3; }
+.fcard small { display: block; margin-top: 26px; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.7; }
+.fcard .mail { font-weight: 600; margin-top: 6px; }
+.fcard nav { display: flex; flex-direction: column; align-items: flex-end; gap: 22px; font-weight: 600; text-transform: uppercase; font-size: 14px; }
+.fcard .bot { margin-top: 34px; padding-top: 24px; border-top: 1px solid rgba(15, 26, 36, 0.15); display: flex; justify-content: space-between; align-items: center; font-size: 14px; font-weight: 600; }
+.fcard .bot svg { width: 20px; height: 20px; }
+
+/* ---------- video popup ---------- */
+.monitor .screen { position: relative; }
+/* the monitor screen plays the video muted on a loop; click for the big player */
+.monitor .screen .screen-video { width: 100%; height: 100%; object-fit: cover; display: block; background: #0d0e12; }
+.expand-btn {
+  position: absolute; right: 8px; bottom: 8px; z-index: 2;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; padding: 0; border: 0; border-radius: 8px;
+  background: rgba(10, 12, 18, 0.72); color: #fff; font: 600 12px/1 var(--sans);
+  backdrop-filter: blur(6px);
+  opacity: 0.85; transform: translateY(0); transition: opacity 0.25s, background 0.25s, transform 0.25s;
+}
+.expand-btn svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.monitor .screen:hover .expand-btn { opacity: 1; background: rgba(10, 12, 18, 0.9); transform: translateY(-2px); }
+.expand-btn:focus-visible { outline: 3px solid #8be4ff; outline-offset: 2px; opacity: 1; }
+.expand-btn span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.monitor .screen { cursor: pointer; }
+
+.vmodal { position: fixed; inset: 0; z-index: 150; display: grid; place-items: center; padding: 72px 16px 32px; }
+.vmodal[hidden] { display: none; }
+.vbackdrop {
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(160, 190, 215, 0.55), rgba(225, 205, 195, 0.55));
+  backdrop-filter: blur(28px) saturate(1.2);
+  opacity: 0; transition: opacity 0.4s ease;
+}
+.vframe {
+  /* sized to the video's own aspect ratio (set from its metadata in video.js),
+     and limited by both the window width and height, so there are no black bars */
+  --ar: 1.7778;
+  position: relative; aspect-ratio: var(--ar);
+  width: min(1200px, 100%, calc((100vh - 120px) * var(--ar)));
+  border-radius: 28px; overflow: hidden; background: #0b0c10;
+  box-shadow: 0 40px 100px rgba(10, 25, 45, 0.45);
+  opacity: 0; transform: translateY(30px) scale(0.94);
+  transition: opacity 0.45s ease, transform 0.55s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.vframe video { width: 100%; height: 100%; display: block; object-fit: cover; background: #000; }
+.vmissing { position: absolute; inset: 0; display: grid; place-content: center; gap: 8px; text-align: center; color: #fff; background: rgba(8, 10, 16, 0.82); font-size: 15px; }
+.vmissing[hidden] { display: none; }
+.vmissing b { font-family: var(--serif); font-weight: 400; font-size: 34px; }
+.vmissing code { background: rgba(255, 255, 255, 0.12); padding: 2px 6px; border-radius: 4px; }
+.vclose {
+  position: absolute; z-index: 2; top: 14px; left: 50%; transform: translateX(calc(min(600px, 50vw - 16px) - 100%));
+  width: 54px; height: 54px; border: 0; border-radius: 12px; background: #fff;
+  display: grid; place-items: center; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  opacity: 0; transition: opacity 0.4s 0.1s;
+}
+.vclose svg { width: 34px; height: 34px; fill: none; stroke: #3b82f6; stroke-width: 1.8; stroke-linecap: round; }
+.vclose:hover svg { stroke: #1d4ed8; }
+.vclose:focus-visible { outline: 3px solid #3b82f6; outline-offset: 3px; }
+.vmodal.open .vbackdrop, .vmodal.open .vclose { opacity: 1; }
+.vmodal.open .vframe { opacity: 1; transform: none; }
+html.v-lock { overflow: hidden; }
+
+
+/* "a little bigger" player: about twice the monitor, never full screen */
+.vframe { width: min(760px, 100%, calc((100vh - 160px) * var(--ar))); border-radius: 20px; }
+.vclose {
+  top: 10px; right: 10px; left: auto; transform: none;
+  width: 36px; height: 36px; border-radius: 50%; background: rgba(10, 12, 18, 0.7); backdrop-filter: blur(6px);
+}
+.vclose svg { width: 18px; height: 18px; stroke: #fff; stroke-width: 2.2; }
+.vclose:hover { background: rgba(10, 12, 18, 0.9); }
+.vclose:hover svg { stroke: #fff; }

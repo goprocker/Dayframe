@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Changelog — Dayframe</title>
+  <meta name="description" content="What's new in Dayframe, release by release.">
+  <link rel="icon" href="/img/app-icon.svg">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+</head>
+<body class="cl-page">
+<a class="logo" href="/" aria-label="Dayframe home"><img class="logo-icon" src="/img/app-icon.svg" alt=""><span class="logo-text">Dayframe.</span></a>
+<nav class="nav">
+  <a class="l" href="/#tour">Tour</a>
+  <a class="l" href="/#features">Features</a>
+  <a class="l" href="/changelog.html" aria-current="page">Changelog</a>
+  <a class="pill dark nav-cta" href="/download/Dayframe_0.1.0_x64-setup.exe" download>Download<span class="for">&nbsp;for Windows</span></a>
+</nav>
+<main class="cl">
+  <h1>Change<em>log</em></h1>
+  <p class="cl-sub">What's new in Dayframe.</p>
+  <article class="cl-entry">
+    <div class="cl-meta"><span class="cl-ver">v0.1.0</span><time datetime="2026-11-12">12 Nov 2026</time></div>
+    <div>
+      <h2>First release</h2>
+      <ul>
+        <li>Automatic tracking of the app in the foreground, sampled once a second.</li>
+        <li>Dashboard with a day timeline, per-app totals, active time and longest session.</li>
+        <li>Analytics across 7, 14 and 30 days, by category and hour of day.</li>
+        <li>Floating always-on-top widget showing your current app and session.</li>
+        <li>Idle detection: time stops when you step away; lock and sleep never count.</li>
+        <li>Consent-first onboarding, tray icon and optional start with Windows.</li>
+        <li>Settings to exclude apps, recategorise them and delete any date range.</li>
+        <li>Everything stays in a local SQLite database. No network, no telemetry.</li>
+      </ul>
+    </div>
+  </article>
+</main>
+<script type="module" src="/src/changelog.js"></script>
+</body>
+</html>

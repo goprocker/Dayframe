@@ -1,6 +1,6 @@
 # Dayframe — Session Handoff
 
-_Last updated: 2026-11-12 · Chunk 6 in progress (release build, docs, guide)_
+_Last updated: 2026-11-12 · Chunk 6 in progress (release build, docs, guide) · Landing page v0.9.0 on branch `feat/landing-page`_
 
 Dayframe is a privacy-first Windows desktop time tracker: Tauri 2 + React/TypeScript + Rust + SQLite. Tagline: **See where your day went.**
 
@@ -120,6 +120,42 @@ Pure, no I/O. Input `Sample { now_ms, app, idle_ms, locked }` each tick → outp
 - Screenshot harness `docs/guide/shots/`: `shot.html`/`shot.tsx` render the real components with `@tauri-apps/api/mocks` and a sample working day (never real user data — the PDF is public); `icons.ts` = icons extracted from local exes; `take.sh` drives headless Edge at 2x against the Vite dev server and crops widget shots to 248×44 / 280×236. Not part of the app build (`tsc` only covers `src`).
 - Rebuild guide: `npm run dev` → `bash docs/guide/shots/take.sh` (if UI changed) → `msedge --headless=new --no-pdf-header-footer --virtual-time-budget=3000 --print-to-pdf=Dayframe-Guide.pdf file:///…/docs/guide/guide.html`. Check overflow with `--dump-dom --window-size=794,1123` and read `body[data-free]` (px free above each footer; negative = overflow).
 - **Still to do:** measure release-build CPU/RAM over a real session; install the NSIS build on a clean user and run the manual checks from chunks 4–5.
+
+## Landing page (`landing/`, branch `feat/landing-page`)
+Separate marketing site, not part of the Tauri app. Plain HTML/CSS/JS on Vite, own `package.json` (version shown on the page) and `CHANGELOG.md`. Visual direction modelled on project44hour.com's layout (serif headline with an italic word, sky/clouds, glass nav, tilted cards) with Dayframe's own content; their copy, imagery and paid fonts were not copied (Instrument Serif + DM Sans instead).
+
+```
+landing/
+  index.html            markup: loader, hero (scene + TV + foreground), tour, screens, features, timeline, download, footer, video popup
+  public/img/           hero-meadow.jpg (owner-supplied), app screenshots, day-*.jpg (Pixabay), app-icon.svg
+  public/video/         dayframe.mp4 (owner-supplied, 1920x1080, 50 s, ~17 MB)
+  src/main.js           loader animation, wiring
+  src/hero.js           pointer/scroll parallax on the meadow, petals + butterflies canvas
+  src/scroll.js         scroll-driven motion, nav theme, pinned tour, progress bar
+  src/clouds.js         clouds painted once to <canvas>
+  src/video.js          muted loop on the TV screen + popup player with sound
+  src/cursor.js         custom dot + ring cursor (fine pointers only)
+  src/styles/           base.css (tokens, nav, loader, cursor), clouds.css, sections.css
+```
+
+What it does now (v0.9.0):
+- **Loader:** a 24h day timeline fills with app-coloured sessions while a clock runs 00:00→24:00, then corner brackets fly out and the hero enters.
+- **Hero:** owner's painted meadow as a two-layer parallax (back + masked foreground flowers), petals/butterflies that scatter from the cursor, dark halo behind the headline. Top-left Dayframe icon + wordmark, top-right white "Download for Windows" pill; both morph into the compact nav after the hero.
+- **Monitor:** retro TV built in CSS (grey body, glowing blue rounded CRT, control panel, knobs, grille), centred and static, standing *behind* the foreground flowers. Plays `dayframe.mp4` muted on a loop; clicking the screen opens a popup sized to the video's aspect ratio that continues from the same time with sound (fullscreen via its controls; Esc / X / backdrop closes and resumes the loop).
+- **Below the hero:** pinned tour reel (slides only if cards overflow), screens grid, feature glass cards, "A day, framed" with four illustrated scenes, download panel, footer with rising wordmark. Nav turns dark-on-white over light sections.
+
+Hard-won notes:
+- **Performance:** live SVG-filtered clouds froze Chrome when moved on scroll, and `url()` filters on canvas were too slow to paint. Clouds are now drawn once to canvas (blur only), bands don't animate, no backdrop blur on cards/footer. Keep it that way.
+- `section > *:not(.cloud)` sets `position: relative`; anything that must be sticky/absolute inside a section needs a more specific selector (e.g. `.tour > .tour-pin`) or `!important`.
+- Sections use `overflow: clip` (not `hidden`) so `position: sticky` keeps working.
+- The meadow image also backs `.hero` itself so no edge can show while layers move (a dark strip was reported once on a wide screen; not reproduced at ≤1280 px — re-check on a large monitor).
+- Screenshot tooling often can't capture the loader (it finishes first); freeze it via JS (`#loader` remove `done`) to inspect.
+
+Run: `cd landing && npm install && npm run dev` → http://localhost:5180 · `npm run build` → `landing/dist`.
+
+State: v0.1.0 committed and pushed (`e24e96c` on `feat/landing-page`); v0.2.0–v0.9.0 changes are **uncommitted** in the working tree, including the 17 MB video. Not merged to `main`. Image credits in `landing/README.md`.
+
+Still to do: real installer link for the Download buttons (they jump to `#download`); check the hero on a large monitor; decide whether to keep the video in git or host it; commit, then PR/merge.
 
 ## Next steps (Chunk 6)
 Perf measurement, NSIS build, README + ARCHITECTURE (see below).

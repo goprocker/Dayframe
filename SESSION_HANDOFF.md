@@ -1,6 +1,6 @@
 # Dayframe — Session Handoff
 
-_Last updated: 2026-11-12 · end of Chunk 5 (widget, analytics)_
+_Last updated: 2026-11-12 · Chunk 6 in progress (release build, docs, guide)_
 
 Dayframe is a privacy-first Windows desktop time tracker: Tauri 2 + React/TypeScript + Rust + SQLite. Tagline: **See where your day went.**
 
@@ -116,7 +116,9 @@ Pure, no I/O. Input `Sample { now_ms, app, idle_ms, locked }` each tick → outp
 ## Chunk 6 — progress
 - `npm run tauri build` succeeds: `Dayframe_0.1.0_x64-setup.exe` 1.94 MiB, `dayframe.exe` 4.6 MB (release, LTO, stripped). No warnings (`db::all_settings` is now test-only).
 - `README.md` and `ARCHITECTURE.md` added.
-- Project guide: `docs/guide/guide.html` → `Dayframe-Guide.pdf` (22 pages, A4). Rebuild with headless Edge: `msedge --headless=new --no-pdf-header-footer --print-to-pdf=Dayframe-Guide.pdf <file:///…/guide.html>`; check overflow with `--dump-dom` and read `body[data-free]` (px free above each footer; negative = overflow).
+- Project guide: `docs/guide/guide.html` → `Dayframe-Guide.pdf` (23 pages, A4, same format as the Islet guide). Section 03 uses real screenshots from `docs/guide/img/`.
+- Screenshot harness `docs/guide/shots/`: `shot.html`/`shot.tsx` render the real components with `@tauri-apps/api/mocks` and a sample working day (never real user data — the PDF is public); `icons.ts` = icons extracted from local exes; `take.sh` drives headless Edge at 2x against the Vite dev server and crops widget shots to 248×44 / 280×236. Not part of the app build (`tsc` only covers `src`).
+- Rebuild guide: `npm run dev` → `bash docs/guide/shots/take.sh` (if UI changed) → `msedge --headless=new --no-pdf-header-footer --virtual-time-budget=3000 --print-to-pdf=Dayframe-Guide.pdf file:///…/docs/guide/guide.html`. Check overflow with `--dump-dom --window-size=794,1123` and read `body[data-free]` (px free above each footer; negative = overflow).
 - **Still to do:** measure release-build CPU/RAM over a real session; install the NSIS build on a clean user and run the manual checks from chunks 4–5.
 
 ## Next steps (Chunk 6)
@@ -142,7 +144,17 @@ npm run tauri dev      # run app
 cd src-tauri && cargo test
 ```
 
-## Git history (main)
+## Git history (main, latest first)
+```
+4ccab6c  docs(guide): replace UI mock-ups with real screenshots
+97e5272  docs: add Dayframe project guide PDF
+8346f12  docs: add README and architecture notes
+6e48dbe  chore(db): compile all_settings only for tests
+6efa682  docs: update session handoff for chunk 5
+5df31b5  feat(ui): add floating widget and analytics view
+dd2f385  feat: add floating widget window and range analytics commands
+```
+Earlier (chunks 1–4):
 ```
 dc79a96  chore: scaffold frontend tooling
 3427c28  chore: scaffold Tauri 2 crate and app config

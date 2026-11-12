@@ -1,6 +1,6 @@
 # Dayframe — Session Handoff
 
-_Last updated: 2026-11-12 · end of Chunk 3 (dashboard)_
+_Last updated: 2026-11-12 · end of Chunk 4 (tray, onboarding, settings)_
 
 Dayframe is a privacy-first Windows desktop time tracker: Tauri 2 + React/TypeScript + Rust + SQLite. Tagline: **See where your day went.**
 
@@ -13,8 +13,8 @@ Repo: https://github.com/goprocker/Dayframe
 | 1 | Foundation: scaffold, SQLite schema, tracking engine, app shell | **Done** (verified below) |
 | 2 | Real Windows tracking (Win32 sampler + background thread) | **Done** (verified below) |
 | 3 | Dashboard on real data (stats, icons, timeline) | **Done** (verified below) |
-| 4 | Tray, onboarding + consent, settings | Next |
-| 5 | Floating widget, analytics charts | Not started |
+| 4 | Tray, onboarding + consent, settings | **Done** (verified below) |
+| 5 | Floating widget, analytics charts | Next |
 | 6 | Release: perf measurement, NSIS installer, README/ARCHITECTURE | Not started |
 
 Full plan: see "Chunks" below.
@@ -87,8 +87,22 @@ Pure, no I/O. Input `Sample { now_ms, app, idle_ms, locked }` each tick → outp
 - `npx vitest run`: 3 passed. `npm run build` passes. `npm run tauri dev` launches without panics (~32 MB RAM).
 - **Not yet verified by eye:** dashboard with real tracked data, icon rendering, light theme. Do this first in chunk 4.
 
-## Next steps (Chunk 4)
-See below; also remove the temporary "Enable tracking (dev)" pill once onboarding exists.
+## Chunk 4 — what was added
+- `tray.rs`: tray menu Open / Pause-Resume / Settings / Quit; left click opens; `tray::sync` updates pause label + tooltip. Settings item emits `navigate` = "settings".
+- `lib.rs`: single-instance plugin (first), autostart plugin with `--minimized`; window starts hidden (`visible: false`) and is shown unless minimized; close → hide to tray.
+- `settings.rs`: get_settings, consent, pause, theme, idle threshold (1–120 min), autostart, list/exclude/categorise apps, delete_range, delete_all_data.
+- Deletion safety: delete commands set `Control::reopen` under the DB lock; the loop then forgets the open session (`Engine::forget`) so deleted time is never resurrected by a checkpoint.
+- UI: `Onboarding.tsx` (explicit checkbox consent, real DB path), `Settings.tsx` (two-step inline confirms, no native dialogs), `App.tsx` consent gate + view switch + theme (follows OS on "system"). Temporary dev enable button removed.
+- Widget toggle in tray/settings deferred to chunk 5 with the widget itself.
+
+## Verification done (Chunk 4)
+- `cargo test`: 27 passed. `npm run build` + `npx vitest run` (3) pass.
+- `npm run tauri dev`: window "Dayframe" shown, ~32 MB, no panics.
+- Gotcha: killing a dev run can leave `msedgewebview2.exe` holding the data folder → next launch panics with WebView2 `0x800700AA`. Kill those processes before relaunching.
+- **Not yet verified by hand:** tray menu clicks, close-to-tray, autostart toggle, second-instance focus, onboarding → dashboard flow, delete range/all, light theme.
+
+## Next steps (Chunk 5)
+Widget window + analytics (see below).
 
 ## Remaining chunks
 - **3** `stats.rs` (day summary, switches, longest session, hourly, 7-day; tests incl. midnight), `icons.rs` (ExtractIconEx → PNG cached in DB), dashboard UI: overview tiles, app list with icons/bars, day timeline with hover, date picker, empty state. Refresh only while visible.

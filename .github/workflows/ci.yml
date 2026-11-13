@@ -66,5 +66,5 @@ jobs:
         with:
           workspaces: src-tauri
       - run: cargo fmt --check
-      - run: cargo clippy --all-targets
+      - run: cargo clippy --all-targets -- -D warnings
       - run: cargo test

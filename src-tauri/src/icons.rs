@@ -62,14 +62,16 @@ unsafe fn icon_to_png(icon: HICON) -> Option<Vec<u8>> {
         return None;
     }
 
-    let mut bmi = BITMAPINFO::default();
-    bmi.bmiHeader = BITMAPINFOHEADER {
-        biSize: std::mem::size_of::<BITMAPINFOHEADER>() as u32,
-        biWidth: w,
-        biHeight: -h, // top-down
-        biPlanes: 1,
-        biBitCount: 32,
-        biCompression: BI_RGB.0,
+    let mut bmi = BITMAPINFO {
+        bmiHeader: BITMAPINFOHEADER {
+            biSize: std::mem::size_of::<BITMAPINFOHEADER>() as u32,
+            biWidth: w,
+            biHeight: -h, // top-down
+            biPlanes: 1,
+            biBitCount: 32,
+            biCompression: BI_RGB.0,
+            ..Default::default()
+        },
         ..Default::default()
     };
     let mut px = vec![0u8; (w * h * 4) as usize];

@@ -117,6 +117,7 @@ impl Engine {
 
     /// Drop the open session without emitting a Close, e.g. after its row was
     /// deleted. The next active tick opens a fresh session.
+    #[allow(dead_code)] // kept as part of the engine API; not called yet
     pub fn forget(&mut self) {
         self.current = None;
         self.last_close_ms = None;

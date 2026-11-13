@@ -72,7 +72,9 @@ fn range_summary(
 ) -> Result<stats::RangeSummary, String> {
     if bounds.len() < 2
         || bounds.len() > 93
-        || bounds.windows(2).any(|w| w[1] <= w[0] || w[1] - w[0] > 26 * 3_600_000)
+        || bounds
+            .windows(2)
+            .any(|w| w[1] <= w[0] || w[1] - w[0] > 26 * 3_600_000)
     {
         return Err("invalid bounds".into());
     }
@@ -137,6 +139,24 @@ pub fn run() {
                 tracker: ctl.clone(),
                 tracker_thread: Mutex::new(None),
             });
+            // Start with Windows by default, once: later toggles in Settings
+            // are respected. Re-register an enabled entry on every launch so
+            // it points at the current executable after an update/reinstall.
+            {
+                use tauri_plugin_autostart::ManagerExt;
+                let st = app.state::<AppState>();
+                let conn = st.db.lock().unwrap();
+                let al = app.autolaunch();
+                let first = db::get_setting(&conn, settings::AUTOSTART_INIT_KEY)?.is_none();
+                if first || al.is_enabled().unwrap_or(false) {
+                    if let Err(e) = al.enable() {
+                        log::error!("autostart registration failed: {e}");
+                    }
+                }
+                if first {
+                    db::set_setting(&conn, settings::AUTOSTART_INIT_KEY, "1")?;
+                }
+            }
             let handle = tracker::spawn(app.handle().clone(), ctl);
             *app.state::<AppState>().tracker_thread.lock().unwrap() = Some(handle);
             tray::build(app.handle())?;

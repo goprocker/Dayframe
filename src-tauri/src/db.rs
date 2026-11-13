@@ -195,9 +195,8 @@ pub fn set_app_icon(conn: &Connection, id: i64, png: &[u8]) -> Result<()> {
 
 /// Non-empty cached icons as `(id, png)`.
 pub fn app_icons(conn: &Connection) -> Result<Vec<(i64, Vec<u8>)>> {
-    let mut st = conn.prepare(
-        "SELECT id, icon_png FROM applications WHERE length(icon_png) > 0",
-    )?;
+    let mut st =
+        conn.prepare("SELECT id, icon_png FROM applications WHERE length(icon_png) > 0")?;
     let rows = st.query_map([], |r| Ok((r.get(0)?, r.get(1)?)))?;
     rows.collect()
 }
@@ -222,6 +221,33 @@ pub fn set_session_end(conn: &Connection, id: i64, end_ms: i64) -> Result<()> {
         params![id, end_ms],
     )?;
     Ok(())
+}
+
+/// Clip sessions to end no later than `cutoff_ms` (input stopped then), and
+/// drop sessions that began at or after it. Only sessions closed after the
+/// cutoff are touched.
+pub fn trim_after(conn: &Connection, cutoff_ms: i64) -> Result<()> {
+    let tx = conn.unchecked_transaction()?;
+    tx.execute(
+        "DELETE FROM activity_sessions WHERE started_at >= ?1",
+        params![cutoff_ms],
+    )?;
+    tx.execute(
+        "UPDATE activity_sessions SET ended_at = ?1, duration_seconds = (?1 - started_at) / 1000
+          WHERE ended_at > ?1",
+        params![cutoff_ms],
+    )?;
+    tx.commit()
+}
+
+/// Start time of a session row, if it still exists.
+pub fn session_start(conn: &Connection, id: i64) -> Result<Option<i64>> {
+    conn.query_row(
+        "SELECT started_at FROM activity_sessions WHERE id = ?1",
+        [id],
+        |r| r.get(0),
+    )
+    .optional()
 }
 
 /// A session clipped to a query window.

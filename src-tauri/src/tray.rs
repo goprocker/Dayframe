@@ -96,9 +96,11 @@ pub fn sync(app: &AppHandle) {
     if let Some(items) = app.try_state::<Mutex<TrayItems>>() {
         if let Ok(items) = items.lock() {
             let _ = items.pause.set_enabled(consented);
-            let _ = items
-                .pause
-                .set_text(if paused { "Resume tracking" } else { "Pause tracking" });
+            let _ = items.pause.set_text(if paused {
+                "Resume tracking"
+            } else {
+                "Pause tracking"
+            });
             let shown = app
                 .try_state::<WidgetState>()
                 .is_some_and(|w| w.enabled.load(Ordering::SeqCst));

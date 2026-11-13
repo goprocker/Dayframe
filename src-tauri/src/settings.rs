@@ -12,6 +12,7 @@ use crate::{db, tray, AppState};
 pub const CONSENT_KEY: &str = "tracking_consented";
 pub const THEME_KEY: &str = "theme";
 pub const IDLE_KEY: &str = "idle_threshold_ms";
+pub const AUTOSTART_INIT_KEY: &str = "autostart_initialized";
 
 type CmdResult<T> = Result<T, String>;
 
@@ -134,22 +135,49 @@ pub fn set_app_category(state: State<'_, AppState>, id: i64, category: String) -
     db::set_app_category(&conn, id, &category).map_err(err)
 }
 
+/// Bring the open session row up to `now` so a deletion sees all live time.
+/// Returns its start time.
+fn checkpoint_live(
+    conn: &rusqlite::Connection,
+    state: &AppState,
+    now: i64,
+) -> CmdResult<Option<i64>> {
+    let id = state.tracker.live_session.load(Ordering::SeqCst);
+    if id == 0 {
+        return Ok(None);
+    }
+    db::set_session_end(conn, id, now).map_err(err)?;
+    db::session_start(conn, id).map_err(err)
+}
+
+fn reopen(state: &AppState, at: i64) {
+    state.tracker.reopen_at.store(at, Ordering::SeqCst);
+    state.tracker.reopen.store(true, Ordering::SeqCst);
+}
+
 #[tauri::command]
 pub fn delete_range(state: State<'_, AppState>, from: i64, to: i64) -> CmdResult<()> {
     if to <= from {
         return Err("invalid range".into());
     }
     let conn = state.db.lock().map_err(err)?;
+    let now = crate::tracker::now_ms();
+    let live = checkpoint_live(&conn, &state, now)?;
     db::delete_range(&conn, from, to).map_err(err)?;
-    state.tracker.reopen.store(true, Ordering::SeqCst);
+    // Only a deletion touching the live session changes its row.
+    if live.is_some_and(|start| from < now && to > start) {
+        reopen(&state, now);
+    }
     Ok(())
 }
 
 #[tauri::command]
 pub fn delete_all_data(state: State<'_, AppState>) -> CmdResult<()> {
     let conn = state.db.lock().map_err(err)?;
+    let now = crate::tracker::now_ms();
+    checkpoint_live(&conn, &state, now)?;
     db::delete_all(&conn).map_err(err)?;
-    state.tracker.reopen.store(true, Ordering::SeqCst);
+    reopen(&state, now);
     state.tracker.reload.store(true, Ordering::SeqCst);
     Ok(())
 }

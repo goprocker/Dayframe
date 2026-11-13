@@ -4,8 +4,8 @@
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use tauri::{
-    AppHandle, LogicalSize, Manager, PhysicalPosition, Position, Size, WebviewUrl,
-    WebviewWindow, WebviewWindowBuilder,
+    AppHandle, LogicalSize, Manager, PhysicalPosition, Position, Size, WebviewUrl, WebviewWindow,
+    WebviewWindowBuilder,
 };
 
 use crate::{db, tray, AppState};
@@ -137,9 +137,7 @@ pub async fn set_widget_enabled(app: AppHandle, enabled: bool) -> Result<(), Str
 
 #[tauri::command]
 pub fn set_widget_expanded(app: AppHandle, expanded: bool) -> Result<(), String> {
-    let w = app
-        .get_webview_window(LABEL)
-        .ok_or("widget not open")?;
+    let w = app.get_webview_window(LABEL).ok_or("widget not open")?;
     w.set_size(size(expanded)).map_err(|e| e.to_string())
 }
 

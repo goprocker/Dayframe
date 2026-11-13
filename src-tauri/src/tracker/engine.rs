@@ -35,9 +35,22 @@ pub struct Sample {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Action {
-    Open { app: ForegroundApp, start_ms: i64 },
-    Checkpoint { end_ms: i64 },
-    Close { end_ms: i64 },
+    Open {
+        app: ForegroundApp,
+        start_ms: i64,
+    },
+    Checkpoint {
+        end_ms: i64,
+    },
+    Close {
+        end_ms: i64,
+    },
+    /// Input actually stopped at `cutoff_ms`: sessions already closed after
+    /// that point (e.g. by a foreground change with no input) must be clipped
+    /// to it, and sessions starting at or after it dropped.
+    TrimAfter {
+        cutoff_ms: i64,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize)]
@@ -53,6 +66,7 @@ pub enum Status {
 
 #[derive(Debug, Clone)]
 struct Open {
+    app: ForegroundApp,
     key: String,
     start_ms: i64,
     last_checkpoint_ms: i64,
@@ -65,6 +79,9 @@ pub struct Engine {
     pub excluded: HashSet<String>,
     current: Option<Open>,
     last_tick_ms: Option<i64>,
+    /// Latest end time of a session closed by this engine; lets idle
+    /// detection know whether closed sessions reach into the idle period.
+    last_close_ms: Option<i64>,
     status: Status,
 }
 
@@ -76,6 +93,7 @@ impl Engine {
             excluded: HashSet::new(),
             current: None,
             last_tick_ms: None,
+            last_close_ms: None,
             status: Status::Unknown,
         }
     }
@@ -91,9 +109,9 @@ impl Engine {
 
     fn close(&mut self, end_ms: i64, out: &mut Vec<Action>) {
         if let Some(open) = self.current.take() {
-            out.push(Action::Close {
-                end_ms: end_ms.max(open.start_ms),
-            });
+            let end_ms = end_ms.max(open.start_ms);
+            self.last_close_ms = Some(self.last_close_ms.map_or(end_ms, |l| l.max(end_ms)));
+            out.push(Action::Close { end_ms });
         }
     }
 
@@ -101,6 +119,25 @@ impl Engine {
     /// deleted. The next active tick opens a fresh session.
     pub fn forget(&mut self) {
         self.current = None;
+        self.last_close_ms = None;
+    }
+
+    /// The open session's row was split or removed by a data deletion that
+    /// first checkpointed it to `at_ms`: continue the same app in a fresh
+    /// session from `at_ms`.
+    pub fn restart(&mut self, at_ms: i64) -> Vec<Action> {
+        self.last_close_ms = None;
+        match self.current.as_mut() {
+            Some(open) => {
+                open.start_ms = at_ms;
+                open.last_checkpoint_ms = at_ms;
+                vec![Action::Open {
+                    app: open.app.clone(),
+                    start_ms: at_ms,
+                }]
+            }
+            None => Vec::new(),
+        }
     }
 
     /// Close any open session immediately (pause, quit, settings change).
@@ -152,6 +189,10 @@ impl Engine {
                 s.now_ms
             };
             self.close(end, &mut out);
+            if status == Status::Idle && self.last_close_ms.is_some_and(|l| l > end) {
+                out.push(Action::TrimAfter { cutoff_ms: end });
+                self.last_close_ms = Some(end);
+            }
             return out;
         }
 
@@ -166,6 +207,7 @@ impl Engine {
             _ => {
                 self.close(s.now_ms, &mut out);
                 self.current = Some(Open {
+                    app: app.clone(),
                     key: app.key.clone(),
                     start_ms: s.now_ms,
                     last_checkpoint_ms: s.now_ms,
@@ -230,6 +272,13 @@ mod tests {
                             done.push((st, end_ms / 1000, k));
                         }
                         Action::Checkpoint { .. } => assert!(open.is_some()),
+                        Action::TrimAfter { cutoff_ms } => {
+                            let c = cutoff_ms / 1000;
+                            done.retain(|(st, _, _)| *st < c);
+                            for d in done.iter_mut() {
+                                d.1 = d.1.min(c);
+                            }
+                        }
                     }
                 }
             }
@@ -355,5 +404,67 @@ mod tests {
         let r = replay(&mut e, &v);
         assert_eq!(r[0], (100, 109, "code".into()));
         assert_eq!(r[1], (50, 55, "code".into()));
+    }
+
+    #[test]
+    fn foreground_change_during_inactivity_is_trimmed_at_idle() {
+        let mut e = Engine::new(300_000);
+        let v: Vec<Sample> = (0..=400)
+            .map(|t| {
+                let idle = if t > 100 { t - 100 } else { 0 };
+                s(t, Some(if t < 200 { "a" } else { "b" }), idle)
+            })
+            .collect();
+        let r = replay(&mut e, &v);
+        assert_eq!(r, vec![(0, 100, "a".into())]);
+    }
+
+    #[test]
+    fn several_switches_during_inactivity_are_trimmed() {
+        let mut e = Engine::new(300_000);
+        let v: Vec<Sample> = (0..=400)
+            .map(|t| {
+                let idle = if t > 100 { t - 100 } else { 0 };
+                let a = match t {
+                    0..=149 => "a",
+                    150..=249 => "b",
+                    250..=329 => "c",
+                    _ => "d",
+                };
+                s(t, Some(a), idle)
+            })
+            .collect();
+        let r = replay(&mut e, &v);
+        assert_eq!(r, vec![(0, 100, "a".into())]);
+    }
+
+    #[test]
+    fn switch_below_threshold_keeps_time() {
+        let mut e = Engine::new(300_000);
+        let mut v: Vec<Sample> = (0..200)
+            .map(|t| {
+                let idle = if t > 100 { t - 100 } else { 0 };
+                s(t, Some(if t < 150 { "a" } else { "b" }), idle)
+            })
+            .collect();
+        v.extend((200..210).map(|t| s(t, Some("b"), 0)));
+        v.push(s(210, None, 0));
+        let r = replay(&mut e, &v);
+        assert_eq!(r, vec![(0, 150, "a".into()), (150, 210, "b".into())]);
+    }
+
+    #[test]
+    fn restart_reopens_current_app() {
+        let mut e = Engine::new(300_000);
+        e.tick(&s(0, Some("a"), 0));
+        let acts = e.restart(5_000);
+        assert!(matches!(
+            &acts[..],
+            [Action::Open {
+                start_ms: 5_000,
+                ..
+            }]
+        ));
+        assert_eq!(e.current().map(|c| c.1), Some(5_000));
     }
 }

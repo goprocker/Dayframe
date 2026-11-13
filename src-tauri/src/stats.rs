@@ -67,8 +67,12 @@ pub fn summarize(from: i64, to: i64, iv: &[Interval], apps: &HashMap<i64, AppRow
         let name = apps.get(&i.app_id);
         let u = usage.entry(i.app_id).or_insert_with(|| AppUsage {
             app_id: i.app_id,
-            name: name.map(|a| a.name.clone()).unwrap_or_else(|| "Unknown".into()),
-            category: name.map(|a| a.category.clone()).unwrap_or_else(|| "Other".into()),
+            name: name
+                .map(|a| a.name.clone())
+                .unwrap_or_else(|| "Unknown".into()),
+            category: name
+                .map(|a| a.category.clone())
+                .unwrap_or_else(|| "Other".into()),
             seconds: 0,
             sessions: 0,
         });
@@ -99,7 +103,11 @@ pub fn summarize(from: i64, to: i64, iv: &[Interval], apps: &HashMap<i64, AppRow
         }
     }
 
-    let switches = timeline.len().saturating_sub(1) as i64;
+    // Only a change of app counts; same-app blocks split by a gap do not.
+    let switches = timeline
+        .windows(2)
+        .filter(|w| w[0].app_id != w[1].app_id)
+        .count() as i64;
     let longest = timeline
         .iter()
         .max_by_key(|b| b.end - b.start)
@@ -135,7 +143,10 @@ pub fn summarize(from: i64, to: i64, iv: &[Interval], apps: &HashMap<i64, AppRow
 }
 
 fn app_map(conn: &rusqlite::Connection) -> Result<HashMap<i64, AppRow>> {
-    Ok(db::list_apps(conn)?.into_iter().map(|a| (a.id, a)).collect())
+    Ok(db::list_apps(conn)?
+        .into_iter()
+        .map(|a| (a.id, a))
+        .collect())
 }
 
 pub fn day_summary(conn: &rusqlite::Connection, from: i64, to: i64) -> Result<DaySummary> {
@@ -244,7 +255,14 @@ pub fn range_summary(conn: &rusqlite::Connection, bounds: &[i64]) -> Result<Rang
     let map = app_map(conn)?;
     let days = bounds
         .windows(2)
-        .map(|w| Ok(summarize(w[0], w[1], &db::intervals(conn, w[0], w[1])?, &map)))
+        .map(|w| {
+            Ok(summarize(
+                w[0],
+                w[1],
+                &db::intervals(conn, w[0], w[1])?,
+                &map,
+            ))
+        })
         .collect::<Result<Vec<_>>>()?;
     Ok(summarize_range(&days, |ms| {
         Local
@@ -282,7 +300,11 @@ mod tests {
     }
 
     fn iv(app_id: i64, s: i64, e: i64) -> Interval {
-        Interval { app_id, start: s, end: e }
+        Interval {
+            app_id,
+            start: s,
+            end: e,
+        }
     }
 
     #[test]
@@ -371,11 +393,20 @@ mod tests {
         assert_eq!(
             r.categories,
             vec![
-                CategoryUsage { name: "Other".into(), seconds: 90 * 60 },
-                CategoryUsage { name: "Browsing".into(), seconds: 30 * 60 },
+                CategoryUsage {
+                    name: "Other".into(),
+                    seconds: 90 * 60
+                },
+                CategoryUsage {
+                    name: "Browsing".into(),
+                    seconds: 30 * 60
+                },
             ]
         );
-        assert_eq!((r.apps[0].app_id, r.apps[0].seconds, r.apps[0].sessions), (1, 90 * 60, 2));
+        assert_eq!(
+            (r.apps[0].app_id, r.apps[0].seconds, r.apps[0].sessions),
+            (1, 90 * 60, 2)
+        );
         assert_eq!(r.hour_of_day[0], 90 * 60);
         assert_eq!(r.hour_of_day[1], 30 * 60);
         assert_eq!(r.hour_of_day.iter().sum::<i64>(), r.total_seconds);
@@ -385,7 +416,35 @@ mod tests {
     fn range_uses_local_hour_mapping() {
         // A 25 h day: bucket 24 maps back to hour 23 via the mapper.
         let d = summarize(0, 25 * 60 * M, &[iv(1, 24 * 60 * M, 25 * 60 * M)], &apps());
-        let r = summarize_range(&[d], |ms| ((ms / (60 * M)) as usize).saturating_sub(1).min(23));
+        let r = summarize_range(&[d], |ms| {
+            ((ms / (60 * M)) as usize).saturating_sub(1).min(23)
+        });
         assert_eq!(r.hour_of_day[23], 3600);
+    }
+
+    #[test]
+    fn switches_count_only_app_changes() {
+        let iv = |a, s, e| Interval {
+            app_id: a,
+            start: s,
+            end: e,
+        };
+        let none = HashMap::new();
+        let d = summarize(
+            0,
+            86_400_000,
+            &[iv(1, 0, 60_000), iv(1, 600_000, 660_000)],
+            &none,
+        );
+        assert_eq!((d.switches, d.timeline.len()), (0, 2));
+        let d = summarize(
+            0,
+            86_400_000,
+            &[iv(1, 0, 1_000), iv(2, 1_000, 2_000), iv(1, 2_000, 3_000)],
+            &none,
+        );
+        assert_eq!(d.switches, 2);
+        assert_eq!(summarize(0, 86_400_000, &[], &none).switches, 0);
+        assert_eq!(summarize(0, 86_400_000, &[iv(1, 0, 5)], &none).switches, 0);
     }
 }

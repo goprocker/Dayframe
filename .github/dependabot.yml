@@ -1,12 +1,28 @@
-# To get started with Dependabot version updates, you'll need to specify which
-# package ecosystems to update and where the package manifests are located.
-# Please see the documentation for all configuration options:
+# Dependabot version updates.
 # https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
 
 version: 2
 updates:
-  - package-ecosystem: "" # See documentation for possible values
-    directory: "/" # Location of package manifests
+  # Desktop app frontend (React/Vite/Tauri JS API)
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      tauri:
+        patterns: ["@tauri-apps/*"]
+
+  # Landing site
+  - package-ecosystem: "npm"
+    directory: "/landing"
     schedule:
       interval: "weekly"
 
+  # Tauri backend (Rust)
+  - package-ecosystem: "cargo"
+    directory: "/src-tauri"
+    schedule:
+      interval: "weekly"
+    groups:
+      tauri:
+        patterns: ["tauri*"]

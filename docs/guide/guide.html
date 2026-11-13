@@ -105,7 +105,7 @@ td code { background: transparent; padding: 0; }
     <div><small>PLATFORM</small><b>Windows 10 / 11</b></div>
     <div><small>BUILT WITH</small><b>Tauri 2 · Rust</b></div>
   </div>
-  <div class="foot"><span>© 2026 Gopinath. All rights reserved.</span><span>Updated 12 Nov 2026 · github.com/goprocker/Dayframe</span></div>
+  <div class="foot"><span>© 2026 Gopinath. All rights reserved.</span><span>Updated 13 Nov 2026 · github.com/goprocker/Dayframe</span></div>
 </section>
 
 <!-- ============ CONTENTS ============ -->
@@ -119,7 +119,7 @@ td code { background: transparent; padding: 0; }
     <div><b>10</b>Using Dayframe</div><div><b>11</b>Settings</div><div><b>12</b>Build, test, debug</div>
     <div><b>13</b>Privacy, troubleshooting, uninstall</div><div><b>14</b>Dayframe in plain English</div>
     <div><b>15</b>Words you need</div><div><b>16</b>Follow the data</div><div><b>17</b>Engineering ideas it shows</div>
-    <div><b>18</b>Hard problems and limits</div><div><b>19</b>Interview questions and answers</div><div><b>20</b>Cheat sheet</div><div><b>21</b>Website and wiki</div>
+    <div><b>18</b>Hard problems and limits</div><div><b>19</b>Interview questions and answers</div><div><b>20</b>Cheat sheet</div><div><b>21</b>Website and wiki</div><div><b>22</b>CI/CD pipeline</div>
   </div>
   <div class="stats">
     <div><b>1 s</b><small>sampling interval</small></div><div><b>30 s</b><small>max data lost on a crash</small></div>
@@ -738,6 +738,38 @@ npm run dev      # http://localhost:5180
 npm run build    # landing/dist</pre>
   <h2>The wiki</h2>
   <p class="small">github.com/goprocker/Dayframe/wiki has short pages for Installation, Using Dayframe, Privacy, Building from Source, Architecture, Landing Page and Troubleshooting. Use it as the quick reference; this guide is the long version.</p>
+  <div class="foot"><span>Dayframe · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
+</section>
+
+<!-- ============ 22 ============ -->
+<section class="page">
+  <div class="kick">SECTION 22</div>
+  <h1>CI/CD pipeline</h1>
+  <div class="lead">Every change is built and tested automatically on GitHub, and a version tag turns into a downloadable Windows installer. Workflows live in <code>.github/workflows/</code>.</div>
+  <h2>The idea</h2>
+  <p class="small"><b>CI</b> (continuous integration) builds and tests each push and pull request so a broken change is caught before it is merged. <b>CD</b> (continuous delivery) packages a passing build into something you can ship. Dayframe uses GitHub Actions for both.</p>
+  <h2>ci.yml: runs on every pull request and push to main</h2>
+  <table class="small">
+    <tr><th>Job</th><th>Runs on</th><th>Steps</th></tr>
+    <tr><td>frontend</td><td>Ubuntu</td><td><code>npm ci</code>, <code>npm run build</code> (TypeScript check + Vite build), <code>npm test</code> (vitest)</td></tr>
+    <tr><td>landing</td><td>Ubuntu</td><td><code>npm ci</code> and <code>npm run build</code> inside <code>landing/</code></td></tr>
+    <tr><td>rust</td><td>Windows</td><td>builds the frontend (Tauri needs <code>dist/</code>), then <code>cargo fmt --check</code>, <code>cargo clippy</code>, <code>cargo test</code></td></tr>
+  </table>
+  <p class="small">The Rust job runs on Windows because the tracker uses Win32 APIs. npm and cargo caches speed up repeat runs, and a newer push to the same branch cancels the older run. Clippy currently reports warnings without failing the job; it becomes strict once the two existing lints in <code>icons.rs</code> are fixed.</p>
+  <h2>release.yml: runs when you push a version tag</h2>
+  <ol class="flow small">
+    <li>Bump the version in <code>package.json</code>, <code>src-tauri/Cargo.toml</code> and <code>src-tauri/tauri.conf.json</code>, then merge.</li>
+    <li>Tag and push: <code>git tag v1.0.1 &amp;&amp; git push origin v1.0.1</code>.</li>
+    <li>The workflow builds the NSIS installer with <code>tauri-action</code> on a Windows runner.</li>
+    <li>It attaches the installer to a <b>draft</b> GitHub Release. Review the notes, then publish.</li>
+  </ol>
+  <p class="small">The workflow can also be started by hand from the Actions tab. The installer is not code-signed, so Windows SmartScreen may warn on first run.</p>
+  <h2>Dependabot</h2>
+  <p class="small"><code>.github/dependabot.yml</code> opens weekly update pull requests for the app's npm packages, the landing site's npm packages and the Rust crates in <code>src-tauri</code>. Tauri packages are grouped into one pull request. CI runs on each, so an update only merges when the build and tests pass.</p>
+  <div class="grid2">
+    <div class="card"><h3>Before you open a PR</h3><span class="small">Run <code>npm run build</code>, <code>npm test</code>, <code>cargo fmt</code> and <code>cargo test</code> locally. They are exactly what CI runs.</span></div>
+    <div class="card"><h3>If CI fails</h3><span class="small">Open the failing job in the pull request's Checks tab, read the first red step, and reproduce it locally with the same command.</span></div>
+  </div>
   <div class="foot"><span>Dayframe · Project Guide</span><span>© 2026 Gopinath. All rights reserved.</span><span class="n"></span></div>
 </section>
 

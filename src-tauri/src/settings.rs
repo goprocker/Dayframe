@@ -7,6 +7,7 @@ use tauri::{AppHandle, Emitter, Manager, State};
 use tauri_plugin_autostart::ManagerExt;
 
 use crate::categories::CATEGORIES;
+use crate::tracker::Control;
 use crate::{db, tray, AppState};
 
 pub const CONSENT_KEY: &str = "tracking_consented";
@@ -137,12 +138,8 @@ pub fn set_app_category(state: State<'_, AppState>, id: i64, category: String) -
 
 /// Bring the open session row up to `now` so a deletion sees all live time.
 /// Returns its start time.
-fn checkpoint_live(
-    conn: &rusqlite::Connection,
-    state: &AppState,
-    now: i64,
-) -> CmdResult<Option<i64>> {
-    let id = state.tracker.live_session.load(Ordering::SeqCst);
+fn checkpoint_live(conn: &rusqlite::Connection, ctl: &Control, now: i64) -> CmdResult<Option<i64>> {
+    let id = ctl.live_session.load(Ordering::SeqCst);
     if id == 0 {
         return Ok(None);
     }
@@ -150,34 +147,53 @@ fn checkpoint_live(
     db::session_start(conn, id).map_err(err)
 }
 
-fn reopen(state: &AppState, at: i64) {
-    state.tracker.reopen_at.store(at, Ordering::SeqCst);
-    state.tracker.reopen.store(true, Ordering::SeqCst);
+/// A deletion changed the live session's row. Until the tracker reconciles,
+/// that row id is stale: clear it so a later command cannot checkpoint (extend)
+/// the retained head across the removed interval.
+fn reopen(ctl: &Control, at: i64) {
+    ctl.live_session.store(0, Ordering::SeqCst);
+    ctl.reopen_at.store(at, Ordering::SeqCst);
+    ctl.reopen.store(true, Ordering::SeqCst);
+}
+
+/// Range deletion against an explicit clock and `Control`, so the ordering of
+/// repeated commands can be tested without a Tauri `State`.
+pub(crate) fn delete_range_at(
+    conn: &rusqlite::Connection,
+    ctl: &Control,
+    from: i64,
+    to: i64,
+    now: i64,
+) -> CmdResult<()> {
+    if to <= from {
+        return Err("invalid range".into());
+    }
+    let live = checkpoint_live(conn, ctl, now)?;
+    db::delete_range(conn, from, to).map_err(err)?;
+    // Only a deletion touching the live session changes its row.
+    if live.is_some_and(|start| from < now && to > start) {
+        reopen(ctl, now);
+    } else if ctl.reopen.load(Ordering::SeqCst) && to > ctl.reopen_at.load(Ordering::SeqCst) {
+        // A reconcile is pending and this deletion reaches into the time the
+        // tracker has not persisted yet: restart after it, not before.
+        ctl.reopen_at.store(now, Ordering::SeqCst);
+    }
+    Ok(())
 }
 
 #[tauri::command]
 pub fn delete_range(state: State<'_, AppState>, from: i64, to: i64) -> CmdResult<()> {
-    if to <= from {
-        return Err("invalid range".into());
-    }
     let conn = state.db.lock().map_err(err)?;
-    let now = crate::tracker::now_ms();
-    let live = checkpoint_live(&conn, &state, now)?;
-    db::delete_range(&conn, from, to).map_err(err)?;
-    // Only a deletion touching the live session changes its row.
-    if live.is_some_and(|start| from < now && to > start) {
-        reopen(&state, now);
-    }
-    Ok(())
+    delete_range_at(&conn, &state.tracker, from, to, crate::tracker::now_ms())
 }
 
 #[tauri::command]
 pub fn delete_all_data(state: State<'_, AppState>) -> CmdResult<()> {
     let conn = state.db.lock().map_err(err)?;
     let now = crate::tracker::now_ms();
-    checkpoint_live(&conn, &state, now)?;
+    checkpoint_live(&conn, &state.tracker, now)?;
     db::delete_all(&conn).map_err(err)?;
-    reopen(&state, now);
+    reopen(&state.tracker, now);
     state.tracker.reload.store(true, Ordering::SeqCst);
     Ok(())
 }

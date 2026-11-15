@@ -185,14 +185,13 @@ fn reconcile_after_delete(engine: &mut Engine, actions: Vec<Action>, at_ms: i64)
     let mut out: Vec<Action> = actions
         .into_iter()
         .filter_map(|a| match a {
-            Action::Close { end_ms } | Action::TrimAfter { cutoff_ms: end_ms, .. }
-                if end_ms < at_ms =>
-            {
-                Some(Action::TrimAfter {
-                    cutoff_ms: end_ms,
-                    at_ms,
-                })
-            }
+            Action::Close { end_ms }
+            | Action::TrimAfter {
+                cutoff_ms: end_ms, ..
+            } if end_ms < at_ms => Some(Action::TrimAfter {
+                cutoff_ms: end_ms,
+                at_ms,
+            }),
             _ => None,
         })
         .collect();
@@ -461,7 +460,10 @@ mod tests {
         let (mut e, mut w) = idle_scenario(&conn);
         fail_trim_trigger(&conn);
         w.apply(&conn, e.tick(&idle_sample(400)));
-        assert!(w.failed && w.has_pending(), "error stays visible while pending");
+        assert!(
+            w.failed && w.has_pending(),
+            "error stays visible while pending"
+        );
         // Still failing on later idle ticks: stays pending, no duplicates.
         for t in 401..=450 {
             w.apply(&conn, e.tick(&idle_sample(t)));

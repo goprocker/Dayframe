@@ -480,7 +480,10 @@ mod tests {
         fail_close_trigger(&conn);
         // Close(A) fails, Open(B) succeeds in the same batch.
         w.apply(&conn, e.tick(&sample_for("b", 46_000)));
-        assert!(w.failed, "error must stay visible while the close is pending");
+        assert!(
+            w.failed,
+            "error must stay visible while the close is pending"
+        );
         conn.execute_batch("DROP TRIGGER fail_close;").unwrap();
         for t in 47..=90 {
             w.apply(&conn, e.tick(&sample_for("b", t * 1000)));

@@ -2,6 +2,11 @@
 
 All notable changes to the Dayframe landing page. Versions follow [SemVer](https://semver.org/); bump `version` in `package.json` and add an entry here.
 
+## [1.0.1] — 2026-11-15
+
+### Changed
+- Installer links point to `Dayframe_1.0.1_x64-setup.exe`, which includes the dashboard, analytics and tracker reliability fixes.
+
 ## [1.0.0] — 2026-11-12
 
 ### Added

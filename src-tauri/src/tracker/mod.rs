@@ -392,7 +392,8 @@ mod tests {
         for t in 100..=145 {
             w.apply(&conn, e.tick(&sample(t * 1000)));
         }
-        ctl.live_session.store(w.session_id.unwrap(), Ordering::SeqCst);
+        ctl.live_session
+            .store(w.session_id.unwrap(), Ordering::SeqCst);
         crate::settings::delete_range_at(&conn, &ctl, first.0, first.1, 145_500).unwrap();
         crate::settings::delete_range_at(&conn, &ctl, second.0, second.1, at2).unwrap();
         let acts = e.tick(&sample(at2.max(146_000)));
@@ -450,7 +451,8 @@ mod tests {
         for t in 100..=145 {
             w.apply(&conn, e.tick(&sample(t * 1000)));
         }
-        ctl.live_session.store(w.session_id.unwrap(), Ordering::SeqCst);
+        ctl.live_session
+            .store(w.session_id.unwrap(), Ordering::SeqCst);
         crate::settings::delete_range_at(&conn, &ctl, 110_000, 120_000, 145_500).unwrap();
         // Mirrors delete_all_data.
         db::delete_all(&conn).unwrap();

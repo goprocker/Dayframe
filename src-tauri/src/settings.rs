@@ -138,11 +138,7 @@ pub fn set_app_category(state: State<'_, AppState>, id: i64, category: String) -
 
 /// Bring the open session row up to `now` so a deletion sees all live time.
 /// Returns its start time.
-fn checkpoint_live(
-    conn: &rusqlite::Connection,
-    ctl: &Control,
-    now: i64,
-) -> CmdResult<Option<i64>> {
+fn checkpoint_live(conn: &rusqlite::Connection, ctl: &Control, now: i64) -> CmdResult<Option<i64>> {
     let id = ctl.live_session.load(Ordering::SeqCst);
     if id == 0 {
         return Ok(None);

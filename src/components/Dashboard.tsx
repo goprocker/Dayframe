@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import {
   BarChart3,
@@ -54,43 +54,48 @@ export function Dashboard({
   iconsRef.current = icons;
   const isToday = isSameDay(date, new Date());
 
-  const load = useCallback(async () => {
-    try {
-      const [from, to] = dayBounds(date);
-      const [d, w] = await Promise.all([
-        stats.day(from, to),
-        stats.rangeTotals(dayBoundsList(date, 7)),
-      ]);
-      setDay(d);
-      setWeek(w);
-      setError(null);
-      if (d.apps.some((a) => !(String(a.appId) in iconsRef.current))) {
-        stats.icons().then(setIcons).catch(() => {});
+  useEffect(() => {
+    let live = true;
+    let request = 0;
+    setDay(null);
+    setWeek([]);
+    setError(null);
+    const load = async () => {
+      const current = ++request;
+      try {
+        const [from, to] = dayBounds(date);
+        const [d, w] = await Promise.all([
+          stats.day(from, to),
+          stats.rangeTotals(dayBoundsList(date, 7)),
+        ]);
+        if (!live || current !== request) return;
+        setDay(d);
+        setWeek(w);
+        setError(null);
+        if (d.apps.some((a) => !(String(a.appId) in iconsRef.current))) {
+          stats.icons().then((result) => {
+            if (live && current === request) setIcons(result);
+          }).catch(() => {});
+        }
+      } catch (e) {
+        if (live && current === request) setError(String(e));
       }
-    } catch (e) {
-      setError(String(e));
-    }
-  }, [date]);
-
-  useEffect(() => {
+    };
     load();
-  }, [load]);
-
-  // Refresh today's view periodically, but only while the window is visible.
-  useEffect(() => {
-    if (!isToday) return;
-    const id = setInterval(() => {
+    // Refresh today's view only while visible. Each date owns its requests.
+    const id = isToday ? setInterval(() => {
       if (document.visibilityState === "visible") load();
-    }, REFRESH_MS);
+    }, REFRESH_MS) : undefined;
     const onVis = () => {
-      if (document.visibilityState === "visible") load();
+      if (isToday && document.visibilityState === "visible") load();
     };
     document.addEventListener("visibilitychange", onVis);
     return () => {
+      live = false;
       clearInterval(id);
       document.removeEventListener("visibilitychange", onVis);
     };
-  }, [isToday, load]);
+  }, [date, isToday]);
 
   useEffect(() => {
     api.trackerState().then(setTracker).catch(() => {});

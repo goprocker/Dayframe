@@ -47,9 +47,12 @@ pub enum Action {
     },
     /// Input actually stopped at `cutoff_ms`: sessions already closed after
     /// that point (e.g. by a foreground change with no input) must be clipped
-    /// to it, and sessions starting at or after it dropped.
+    /// to it, and sessions starting at or after it dropped. `at_ms` is when the
+    /// idle state was observed; only sessions already ended by then are
+    /// affected, so a retried trim never touches later activity.
     TrimAfter {
         cutoff_ms: i64,
+        at_ms: i64,
     },
 }
 
@@ -191,7 +194,10 @@ impl Engine {
             };
             self.close(end, &mut out);
             if status == Status::Idle && self.last_close_ms.is_some_and(|l| l > end) {
-                out.push(Action::TrimAfter { cutoff_ms: end });
+                out.push(Action::TrimAfter {
+                    cutoff_ms: end,
+                    at_ms: s.now_ms,
+                });
                 self.last_close_ms = Some(end);
             }
             return out;
@@ -273,7 +279,7 @@ mod tests {
                             done.push((st, end_ms / 1000, k));
                         }
                         Action::Checkpoint { .. } => assert!(open.is_some()),
-                        Action::TrimAfter { cutoff_ms } => {
+                        Action::TrimAfter { cutoff_ms, .. } => {
                             let c = cutoff_ms / 1000;
                             done.retain(|(st, _, _)| *st < c);
                             for d in done.iter_mut() {

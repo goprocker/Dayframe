@@ -75,7 +75,20 @@ struct Writer {
     /// An Open the engine accepted but the DB rejected; retried on the next
     /// checkpoint/close so a transient failure does not lose the session.
     pending: Option<(ForegroundApp, i64)>,
+    /// Closes the DB rejected. Kept with their own session identity and end
+    /// time so the next session cannot replace them; retried every tick.
+    unresolved: Vec<UnresolvedClose>,
+    /// Result of the latest action write.
+    action_failed: bool,
+    /// Writes are failing or still waiting to be retried.
     failed: bool,
+}
+
+/// A session whose closing write failed.
+struct UnresolvedClose {
+    session_id: Option<i64>,
+    open: Option<(ForegroundApp, i64)>,
+    end_ms: i64,
 }
 
 impl Writer {
@@ -83,6 +96,50 @@ impl Writer {
         self.session_id = None;
         self.app_name = None;
         self.pending = None;
+    }
+
+    /// Reset after a data deletion changed or removed the rows. Retrying a
+    /// stale end time could extend a retained head across the removed range or
+    /// re-insert a session from deleted time, so unresolved closes are dropped.
+    fn reset_after_delete(&mut self) {
+        self.reset();
+        self.unresolved.clear();
+    }
+
+    /// True while a failed write still has to be retried.
+    fn has_pending(&self) -> bool {
+        !self.unresolved.is_empty()
+    }
+
+    /// Retry closes the DB rejected earlier, oldest first.
+    fn retry_closes(&mut self, conn: &rusqlite::Connection) {
+        let mut still = Vec::new();
+        for mut c in std::mem::take(&mut self.unresolved) {
+            let r = (|| {
+                if c.session_id.is_none() {
+                    if let Some((app, start)) = c.open.take() {
+                        let id = db::upsert_app(conn, &app, start)
+                            .and_then(|id| db::open_session(conn, id, start));
+                        match id {
+                            Ok(id) => c.session_id = Some(id),
+                            Err(e) => {
+                                c.open = Some((app, start));
+                                return Err(e);
+                            }
+                        }
+                    }
+                }
+                match c.session_id {
+                    Some(id) => db::set_session_end(conn, id, c.end_ms),
+                    None => Ok(()),
+                }
+            })();
+            if let Err(e) = r {
+                log::error!("tracker db close retry failed: {e}");
+                still.push(c);
+            }
+        }
+        self.unresolved = still;
     }
 
     fn open(
@@ -121,6 +178,7 @@ impl Writer {
     }
 
     fn apply(&mut self, conn: &rusqlite::Connection, actions: Vec<Action>) {
+        self.retry_closes(conn);
         for a in actions {
             let r = match a {
                 Action::Open { app, start_ms } => {
@@ -130,16 +188,28 @@ impl Writer {
                 Action::Checkpoint { end_ms } => self.end(conn, end_ms),
                 Action::Close { end_ms } => {
                     let r = self.end(conn, end_ms);
+                    let (session_id, open) = (self.session_id, self.pending.take());
                     self.reset();
-                    r
+                    // Tracked via `unresolved` (retried, error kept visible)
+                    // rather than the per-action flag.
+                    if let Err(e) = r {
+                        log::error!("tracker db close failed, will retry: {e}");
+                        self.unresolved.push(UnresolvedClose {
+                            session_id,
+                            open,
+                            end_ms,
+                        });
+                    }
+                    Ok(())
                 }
                 Action::TrimAfter { cutoff_ms } => db::trim_after(conn, cutoff_ms),
             };
-            self.failed = r.is_err();
+            self.action_failed = r.is_err();
             if let Err(e) = r {
                 log::error!("tracker db write failed: {e}");
             }
         }
+        self.failed = self.action_failed || self.has_pending();
     }
 }
 
@@ -203,12 +273,12 @@ fn run(app: AppHandle, ctl: Arc<Control>) {
             engine.tick(&sample)
         };
 
-        if !actions.is_empty() || ctl.reopen.load(Ordering::SeqCst) {
+        if !actions.is_empty() || ctl.reopen.load(Ordering::SeqCst) || writer.has_pending() {
             if let Ok(conn) = state.db.lock() {
                 // Checked under the lock so no write can land between a
                 // delete and this reset.
                 let actions = if ctl.reopen.swap(false, Ordering::SeqCst) {
-                    writer.reset();
+                    writer.reset_after_delete();
                     reconcile_after_delete(
                         &mut engine,
                         actions,
@@ -380,5 +450,103 @@ mod tests {
         w.apply(&conn, reconcile_after_delete(&mut e, acts, 145_500));
         w.apply(&conn, e.flush(150_000));
         assert_eq!(spans(&conn), vec![(145_500, 150_000)]);
+    }
+
+    fn fail_close_trigger(conn: &rusqlite::Connection) {
+        conn.execute_batch(
+            "CREATE TRIGGER fail_close BEFORE UPDATE ON activity_sessions
+             BEGIN SELECT RAISE(FAIL, 'temporary write failure'); END;",
+        )
+        .unwrap();
+    }
+
+    fn sample_for(app_name: &str, ms: i64) -> Sample {
+        Sample {
+            now_ms: ms,
+            app: Some(app(app_name)),
+            idle_ms: 0,
+            locked: false,
+        }
+    }
+
+    #[test]
+    fn failed_close_is_retained_and_keeps_error_visible() {
+        let conn = db::open(Path::new(":memory:")).unwrap();
+        let mut e = Engine::new(DEFAULT_IDLE_MS);
+        let mut w = Writer::default();
+        for t in 0..=45 {
+            w.apply(&conn, e.tick(&sample_for("a", t * 1000)));
+        }
+        fail_close_trigger(&conn);
+        // Close(A) fails, Open(B) succeeds in the same batch.
+        w.apply(&conn, e.tick(&sample_for("b", 46_000)));
+        assert!(w.failed, "error must stay visible while the close is pending");
+        conn.execute_batch("DROP TRIGGER fail_close;").unwrap();
+        for t in 47..=90 {
+            w.apply(&conn, e.tick(&sample_for("b", t * 1000)));
+        }
+        w.apply(&conn, e.flush(90_000));
+        assert!(!w.failed);
+        assert_eq!(spans(&conn), vec![(0, 46_000), (46_000, 90_000)]);
+    }
+
+    #[test]
+    fn repeated_close_failures_recover_with_no_duplicates() {
+        let conn = db::open(Path::new(":memory:")).unwrap();
+        let mut e = Engine::new(DEFAULT_IDLE_MS);
+        let mut w = Writer::default();
+        for t in 0..=45 {
+            w.apply(&conn, e.tick(&sample_for("a", t * 1000)));
+        }
+        fail_close_trigger(&conn);
+        w.apply(&conn, e.tick(&sample_for("b", 46_000)));
+        for t in 47..=60 {
+            let name = if t < 55 { "b" } else { "c" };
+            w.apply(&conn, e.tick(&sample_for(name, t * 1000)));
+        }
+        assert!(w.failed && w.unresolved.len() == 2);
+        conn.execute_batch("DROP TRIGGER fail_close;").unwrap();
+        w.apply(&conn, Vec::new());
+        assert!(!w.failed && !w.has_pending());
+        w.apply(&conn, e.flush(61_000));
+        assert_eq!(
+            spans(&conn),
+            vec![(0, 46_000), (46_000, 55_000), (55_000, 61_000)]
+        );
+    }
+
+    #[test]
+    fn failed_close_on_pause_is_retried_without_new_actions() {
+        let conn = db::open(Path::new(":memory:")).unwrap();
+        let mut e = Engine::new(DEFAULT_IDLE_MS);
+        let mut w = Writer::default();
+        for t in 0..=45 {
+            w.apply(&conn, e.tick(&sample_for("a", t * 1000)));
+        }
+        fail_close_trigger(&conn);
+        w.apply(&conn, e.flush(45_500));
+        assert!(w.failed);
+        conn.execute_batch("DROP TRIGGER fail_close;").unwrap();
+        w.apply(&conn, Vec::new());
+        assert!(!w.failed);
+        assert_eq!(spans(&conn), vec![(0, 45_500)]);
+    }
+
+    #[test]
+    fn deletion_discards_pending_close_instead_of_restoring_time() {
+        let conn = db::open(Path::new(":memory:")).unwrap();
+        let mut e = Engine::new(DEFAULT_IDLE_MS);
+        let mut w = Writer::default();
+        for t in 0..=45 {
+            w.apply(&conn, e.tick(&sample_for("a", t * 1000)));
+        }
+        fail_close_trigger(&conn);
+        w.apply(&conn, e.tick(&sample_for("b", 46_000)));
+        conn.execute_batch("DROP TRIGGER fail_close;").unwrap();
+        db::delete_range(&conn, 10_000, 40_000).unwrap();
+        w.reset_after_delete(); // the tracker does this on the reopen flag
+        w.apply(&conn, Vec::new());
+        assert!(!w.has_pending());
+        assert_eq!(spans(&conn), vec![(0, 10_000)]);
     }
 }

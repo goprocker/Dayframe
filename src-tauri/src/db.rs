@@ -225,17 +225,19 @@ pub fn set_session_end(conn: &Connection, id: i64, end_ms: i64) -> Result<()> {
 
 /// Clip sessions to end no later than `cutoff_ms` (input stopped then), and
 /// drop sessions that began at or after it. Only sessions closed after the
-/// cutoff are touched.
-pub fn trim_after(conn: &Connection, cutoff_ms: i64) -> Result<()> {
+/// cutoff are touched, and only those that had already ended by `at_ms` (when
+/// the idle state was observed): activity recorded after input resumed is
+/// never affected, so a delayed retry stays safe.
+pub fn trim_after(conn: &Connection, cutoff_ms: i64, at_ms: i64) -> Result<()> {
     let tx = conn.unchecked_transaction()?;
     tx.execute(
-        "DELETE FROM activity_sessions WHERE started_at >= ?1",
-        params![cutoff_ms],
+        "DELETE FROM activity_sessions WHERE started_at >= ?1 AND ended_at <= ?2",
+        params![cutoff_ms, at_ms],
     )?;
     tx.execute(
         "UPDATE activity_sessions SET ended_at = ?1, duration_seconds = (?1 - started_at) / 1000
-          WHERE ended_at > ?1",
-        params![cutoff_ms],
+          WHERE ended_at > ?1 AND ended_at <= ?2",
+        params![cutoff_ms, at_ms],
     )?;
     tx.commit()
 }

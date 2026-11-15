@@ -75,6 +75,13 @@ struct Writer {
     /// An Open the engine accepted but the DB rejected; retried on the next
     /// checkpoint/close so a transient failure does not lose the session.
     pending: Option<(ForegroundApp, i64)>,
+    /// A retroactive idle trim the DB rejected: (earliest cutoff, latest
+    /// observation time). Retried every tick; bounded by the observation time
+    /// so it cannot touch activity recorded after input resumed.
+    trim_pending: Option<(i64, i64)>,
+    /// Result of the latest action write.
+    action_failed: bool,
+    /// Writes are failing or still waiting to be retried.
     failed: bool,
 }
 
@@ -120,7 +127,29 @@ impl Writer {
         }
     }
 
+    /// True while a failed write still has to be retried.
+    fn has_pending(&self) -> bool {
+        self.trim_pending.is_some()
+    }
+
+    fn trim(&mut self, conn: &rusqlite::Connection, cutoff_ms: i64, at_ms: i64) {
+        let (cutoff, at) = match self.trim_pending {
+            Some((c, a)) => (c.min(cutoff_ms), a.max(at_ms)),
+            None => (cutoff_ms, at_ms),
+        };
+        match db::trim_after(conn, cutoff, at) {
+            Ok(()) => self.trim_pending = None,
+            Err(e) => {
+                log::error!("tracker idle trim failed, will retry: {e}");
+                self.trim_pending = Some((cutoff, at));
+            }
+        }
+    }
+
     fn apply(&mut self, conn: &rusqlite::Connection, actions: Vec<Action>) {
+        if let Some((cutoff, at)) = self.trim_pending {
+            self.trim(conn, cutoff, at);
+        }
         for a in actions {
             let r = match a {
                 Action::Open { app, start_ms } => {
@@ -133,13 +162,18 @@ impl Writer {
                     self.reset();
                     r
                 }
-                Action::TrimAfter { cutoff_ms } => db::trim_after(conn, cutoff_ms),
+                Action::TrimAfter { cutoff_ms, at_ms } => {
+                    // Tracked via `trim_pending`, not the per-action flag.
+                    self.trim(conn, cutoff_ms, at_ms);
+                    Ok(())
+                }
             };
-            self.failed = r.is_err();
+            self.action_failed = r.is_err();
             if let Err(e) = r {
                 log::error!("tracker db write failed: {e}");
             }
         }
+        self.failed = self.action_failed || self.has_pending();
     }
 }
 
@@ -151,10 +185,13 @@ fn reconcile_after_delete(engine: &mut Engine, actions: Vec<Action>, at_ms: i64)
     let mut out: Vec<Action> = actions
         .into_iter()
         .filter_map(|a| match a {
-            Action::Close { end_ms } | Action::TrimAfter { cutoff_ms: end_ms }
+            Action::Close { end_ms } | Action::TrimAfter { cutoff_ms: end_ms, .. }
                 if end_ms < at_ms =>
             {
-                Some(Action::TrimAfter { cutoff_ms: end_ms })
+                Some(Action::TrimAfter {
+                    cutoff_ms: end_ms,
+                    at_ms,
+                })
             }
             _ => None,
         })
@@ -203,7 +240,7 @@ fn run(app: AppHandle, ctl: Arc<Control>) {
             engine.tick(&sample)
         };
 
-        if !actions.is_empty() || ctl.reopen.load(Ordering::SeqCst) {
+        if !actions.is_empty() || ctl.reopen.load(Ordering::SeqCst) || writer.has_pending() {
             if let Ok(conn) = state.db.lock() {
                 // Checked under the lock so no write can land between a
                 // delete and this reset.
@@ -380,5 +417,90 @@ mod tests {
         w.apply(&conn, reconcile_after_delete(&mut e, acts, 145_500));
         w.apply(&conn, e.flush(150_000));
         assert_eq!(spans(&conn), vec![(145_500, 150_000)]);
+    }
+
+    /// The issue scenario: A until t=200, B after; input stops at t=100; the
+    /// idle transition at t=400 fails to trim once.
+    fn idle_scenario(conn: &rusqlite::Connection) -> (Engine, Writer) {
+        let mut e = Engine::new(DEFAULT_IDLE_MS);
+        let mut w = Writer::default();
+        for t in 0..400 {
+            let idle = if t > 100 { t - 100 } else { 0 };
+            let name = if t < 200 { "a" } else { "b" };
+            let smp = Sample {
+                now_ms: t * 1000,
+                app: Some(app(name)),
+                idle_ms: idle * 1000,
+                locked: false,
+            };
+            w.apply(conn, e.tick(&smp));
+        }
+        (e, w)
+    }
+
+    fn idle_sample(t: i64) -> Sample {
+        Sample {
+            now_ms: t * 1000,
+            app: Some(app("b")),
+            idle_ms: (t - 100) * 1000,
+            locked: false,
+        }
+    }
+
+    fn fail_trim_trigger(conn: &rusqlite::Connection) {
+        conn.execute_batch(
+            "CREATE TRIGGER fail_trim BEFORE DELETE ON activity_sessions
+             BEGIN SELECT RAISE(FAIL, 'transient trim failure'); END;",
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn failed_idle_trim_is_retried_until_it_succeeds() {
+        let conn = db::open(Path::new(":memory:")).unwrap();
+        let (mut e, mut w) = idle_scenario(&conn);
+        fail_trim_trigger(&conn);
+        w.apply(&conn, e.tick(&idle_sample(400)));
+        assert!(w.failed && w.has_pending(), "error stays visible while pending");
+        // Still failing on later idle ticks: stays pending, no duplicates.
+        for t in 401..=450 {
+            w.apply(&conn, e.tick(&idle_sample(t)));
+        }
+        assert!(w.failed);
+        conn.execute_batch("DROP TRIGGER fail_trim;").unwrap();
+        for t in 451..=1000 {
+            w.apply(&conn, e.tick(&idle_sample(t)));
+        }
+        assert!(!w.failed && !w.has_pending());
+        assert_eq!(spans(&conn), vec![(0, 100_000)]);
+    }
+
+    #[test]
+    fn delayed_trim_never_deletes_activity_after_input_resumes() {
+        let conn = db::open(Path::new(":memory:")).unwrap();
+        let (mut e, mut w) = idle_scenario(&conn);
+        fail_trim_trigger(&conn);
+        w.apply(&conn, e.tick(&idle_sample(400)));
+        assert!(w.has_pending());
+        // User returns and works in B before storage recovers.
+        for t in 401..=430 {
+            w.apply(&conn, e.tick(&sample_for_b(t * 1000)));
+        }
+        conn.execute_batch("DROP TRIGGER fail_trim;").unwrap();
+        for t in 431..=440 {
+            w.apply(&conn, e.tick(&sample_for_b(t * 1000)));
+        }
+        w.apply(&conn, e.flush(441_000));
+        assert!(!w.failed);
+        assert_eq!(spans(&conn), vec![(0, 100_000), (401_000, 441_000)]);
+    }
+
+    fn sample_for_b(ms: i64) -> Sample {
+        Sample {
+            now_ms: ms,
+            app: Some(app("b")),
+            idle_ms: 0,
+            locked: false,
+        }
     }
 }

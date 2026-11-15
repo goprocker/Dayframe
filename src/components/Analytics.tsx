@@ -43,6 +43,8 @@ export function Analytics({ onBack }: { onBack: () => void }) {
 
   useEffect(() => {
     let live = true;
+    setData(null);
+    setError(null);
     stats
       .range(dayBoundsList(startOfDay(new Date()), range))
       .then((d) => live && (setData(d), setError(null)))

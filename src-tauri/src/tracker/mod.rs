@@ -79,10 +79,20 @@ struct Writer {
     /// observation time). Retried every tick; bounded by the observation time
     /// so it cannot touch activity recorded after input resumed.
     trim_pending: Option<(i64, i64)>,
+    /// Closes the DB rejected. Kept with their own session identity and end
+    /// time so the next session cannot replace them; retried every tick.
+    unresolved: Vec<UnresolvedClose>,
     /// Result of the latest action write.
     action_failed: bool,
     /// Writes are failing or still waiting to be retried.
     failed: bool,
+}
+
+/// A session whose closing write failed.
+struct UnresolvedClose {
+    session_id: Option<i64>,
+    open: Option<(ForegroundApp, i64)>,
+    end_ms: i64,
 }
 
 impl Writer {
@@ -90,6 +100,50 @@ impl Writer {
         self.session_id = None;
         self.app_name = None;
         self.pending = None;
+    }
+
+    /// Reset after a data deletion changed or removed the rows. Retrying a
+    /// stale end time could extend a retained head across the removed range or
+    /// re-insert a session from deleted time, so unresolved closes are dropped.
+    fn reset_after_delete(&mut self) {
+        self.reset();
+        self.unresolved.clear();
+    }
+
+    /// True while a failed write still has to be retried.
+    fn has_pending(&self) -> bool {
+        !self.unresolved.is_empty() || self.trim_pending.is_some()
+    }
+
+    /// Retry closes the DB rejected earlier, oldest first.
+    fn retry_closes(&mut self, conn: &rusqlite::Connection) {
+        let mut still = Vec::new();
+        for mut c in std::mem::take(&mut self.unresolved) {
+            let r = (|| {
+                if c.session_id.is_none() {
+                    if let Some((app, start)) = c.open.take() {
+                        let id = db::upsert_app(conn, &app, start)
+                            .and_then(|id| db::open_session(conn, id, start));
+                        match id {
+                            Ok(id) => c.session_id = Some(id),
+                            Err(e) => {
+                                c.open = Some((app, start));
+                                return Err(e);
+                            }
+                        }
+                    }
+                }
+                match c.session_id {
+                    Some(id) => db::set_session_end(conn, id, c.end_ms),
+                    None => Ok(()),
+                }
+            })();
+            if let Err(e) = r {
+                log::error!("tracker db close retry failed: {e}");
+                still.push(c);
+            }
+        }
+        self.unresolved = still;
     }
 
     fn open(
@@ -127,11 +181,6 @@ impl Writer {
         }
     }
 
-    /// True while a failed write still has to be retried.
-    fn has_pending(&self) -> bool {
-        self.trim_pending.is_some()
-    }
-
     fn trim(&mut self, conn: &rusqlite::Connection, cutoff_ms: i64, at_ms: i64) {
         let (cutoff, at) = match self.trim_pending {
             Some((c, a)) => (c.min(cutoff_ms), a.max(at_ms)),
@@ -147,6 +196,7 @@ impl Writer {
     }
 
     fn apply(&mut self, conn: &rusqlite::Connection, actions: Vec<Action>) {
+        self.retry_closes(conn);
         if let Some((cutoff, at)) = self.trim_pending {
             self.trim(conn, cutoff, at);
         }
@@ -159,8 +209,19 @@ impl Writer {
                 Action::Checkpoint { end_ms } => self.end(conn, end_ms),
                 Action::Close { end_ms } => {
                     let r = self.end(conn, end_ms);
+                    let (session_id, open) = (self.session_id, self.pending.take());
                     self.reset();
-                    r
+                    // Tracked via `unresolved` (retried, error kept visible)
+                    // rather than the per-action flag.
+                    if let Err(e) = r {
+                        log::error!("tracker db close failed, will retry: {e}");
+                        self.unresolved.push(UnresolvedClose {
+                            session_id,
+                            open,
+                            end_ms,
+                        });
+                    }
+                    Ok(())
                 }
                 Action::TrimAfter { cutoff_ms, at_ms } => {
                     // Tracked via `trim_pending`, not the per-action flag.
@@ -244,7 +305,7 @@ fn run(app: AppHandle, ctl: Arc<Control>) {
                 // Checked under the lock so no write can land between a
                 // delete and this reset.
                 let actions = if ctl.reopen.swap(false, Ordering::SeqCst) {
-                    writer.reset();
+                    writer.reset_after_delete();
                     reconcile_after_delete(
                         &mut engine,
                         actions,
@@ -416,6 +477,191 @@ mod tests {
         w.apply(&conn, reconcile_after_delete(&mut e, acts, 145_500));
         w.apply(&conn, e.flush(150_000));
         assert_eq!(spans(&conn), vec![(145_500, 150_000)]);
+    }
+
+    fn fail_close_trigger(conn: &rusqlite::Connection) {
+        conn.execute_batch(
+            "CREATE TRIGGER fail_close BEFORE UPDATE ON activity_sessions
+             BEGIN SELECT RAISE(FAIL, 'temporary write failure'); END;",
+        )
+        .unwrap();
+    }
+
+    fn sample_for(app_name: &str, ms: i64) -> Sample {
+        Sample {
+            now_ms: ms,
+            app: Some(app(app_name)),
+            idle_ms: 0,
+            locked: false,
+        }
+    }
+
+    #[test]
+    fn failed_close_is_retained_and_keeps_error_visible() {
+        let conn = db::open(Path::new(":memory:")).unwrap();
+        let mut e = Engine::new(DEFAULT_IDLE_MS);
+        let mut w = Writer::default();
+        for t in 0..=45 {
+            w.apply(&conn, e.tick(&sample_for("a", t * 1000)));
+        }
+        fail_close_trigger(&conn);
+        // Close(A) fails, Open(B) succeeds in the same batch.
+        w.apply(&conn, e.tick(&sample_for("b", 46_000)));
+        assert!(
+            w.failed,
+            "error must stay visible while the close is pending"
+        );
+        conn.execute_batch("DROP TRIGGER fail_close;").unwrap();
+        for t in 47..=90 {
+            w.apply(&conn, e.tick(&sample_for("b", t * 1000)));
+        }
+        w.apply(&conn, e.flush(90_000));
+        assert!(!w.failed);
+        assert_eq!(spans(&conn), vec![(0, 46_000), (46_000, 90_000)]);
+    }
+
+    #[test]
+    fn repeated_close_failures_recover_with_no_duplicates() {
+        let conn = db::open(Path::new(":memory:")).unwrap();
+        let mut e = Engine::new(DEFAULT_IDLE_MS);
+        let mut w = Writer::default();
+        for t in 0..=45 {
+            w.apply(&conn, e.tick(&sample_for("a", t * 1000)));
+        }
+        fail_close_trigger(&conn);
+        w.apply(&conn, e.tick(&sample_for("b", 46_000)));
+        for t in 47..=60 {
+            let name = if t < 55 { "b" } else { "c" };
+            w.apply(&conn, e.tick(&sample_for(name, t * 1000)));
+        }
+        assert!(w.failed && w.unresolved.len() == 2);
+        conn.execute_batch("DROP TRIGGER fail_close;").unwrap();
+        w.apply(&conn, Vec::new());
+        assert!(!w.failed && !w.has_pending());
+        w.apply(&conn, e.flush(61_000));
+        assert_eq!(
+            spans(&conn),
+            vec![(0, 46_000), (46_000, 55_000), (55_000, 61_000)]
+        );
+    }
+
+    #[test]
+    fn failed_close_on_pause_is_retried_without_new_actions() {
+        let conn = db::open(Path::new(":memory:")).unwrap();
+        let mut e = Engine::new(DEFAULT_IDLE_MS);
+        let mut w = Writer::default();
+        for t in 0..=45 {
+            w.apply(&conn, e.tick(&sample_for("a", t * 1000)));
+        }
+        fail_close_trigger(&conn);
+        w.apply(&conn, e.flush(45_500));
+        assert!(w.failed);
+        conn.execute_batch("DROP TRIGGER fail_close;").unwrap();
+        w.apply(&conn, Vec::new());
+        assert!(!w.failed);
+        assert_eq!(spans(&conn), vec![(0, 45_500)]);
+    }
+
+    #[test]
+    fn deletion_discards_pending_close_instead_of_restoring_time() {
+        let conn = db::open(Path::new(":memory:")).unwrap();
+        let mut e = Engine::new(DEFAULT_IDLE_MS);
+        let mut w = Writer::default();
+        for t in 0..=45 {
+            w.apply(&conn, e.tick(&sample_for("a", t * 1000)));
+        }
+        fail_close_trigger(&conn);
+        w.apply(&conn, e.tick(&sample_for("b", 46_000)));
+        conn.execute_batch("DROP TRIGGER fail_close;").unwrap();
+        db::delete_range(&conn, 10_000, 40_000).unwrap();
+        w.reset_after_delete(); // the tracker does this on the reopen flag
+        w.apply(&conn, Vec::new());
+        assert!(!w.has_pending());
+        assert_eq!(spans(&conn), vec![(0, 10_000)]);
+    }
+
+    /// Two deletion commands run before the tracker reconciles (the second
+    /// one reads the stale live row id unless the first cleared it).
+    fn run_two_deletes(first: (i64, i64), second: (i64, i64), at2: i64) -> Vec<(i64, i64)> {
+        let conn = db::open(Path::new(":memory:")).unwrap();
+        let ctl = Control::default();
+        let mut e = Engine::new(DEFAULT_IDLE_MS);
+        let mut w = Writer::default();
+        for t in 100..=145 {
+            w.apply(&conn, e.tick(&sample(t * 1000)));
+        }
+        ctl.live_session
+            .store(w.session_id.unwrap(), Ordering::SeqCst);
+        crate::settings::delete_range_at(&conn, &ctl, first.0, first.1, 145_500).unwrap();
+        crate::settings::delete_range_at(&conn, &ctl, second.0, second.1, at2).unwrap();
+        let acts = e.tick(&sample(at2.max(146_000)));
+        let acts = if ctl.reopen.swap(false, Ordering::SeqCst) {
+            w.reset();
+            reconcile_after_delete(&mut e, acts, ctl.reopen_at.load(Ordering::SeqCst))
+        } else {
+            acts
+        };
+        w.apply(&conn, acts);
+        w.apply(&conn, e.flush(150_000));
+        let s = spans(&conn);
+        for pair in s.windows(2) {
+            assert!(pair[0].1 <= pair[1].0, "overlapping sessions: {s:?}");
+        }
+        s
+    }
+
+    #[test]
+    fn second_unrelated_deletion_does_not_restore_first() {
+        assert_eq!(
+            run_two_deletes((110_000, 120_000), (0, 50_000), 146_000),
+            vec![(100_000, 110_000), (120_000, 145_500), (145_500, 150_000)]
+        );
+    }
+
+    #[test]
+    fn nested_and_overlapping_second_deletions_stay_deleted() {
+        // Nested inside the first range.
+        assert_eq!(
+            run_two_deletes((110_000, 120_000), (112_000, 118_000), 146_000),
+            vec![(100_000, 110_000), (120_000, 145_500), (145_500, 150_000)]
+        );
+        // Overlapping the first range and eating into the retained tail.
+        assert_eq!(
+            run_two_deletes((110_000, 120_000), (115_000, 130_000), 146_000),
+            vec![(100_000, 110_000), (130_000, 145_500), (145_500, 150_000)]
+        );
+    }
+
+    #[test]
+    fn second_deletion_reaching_unpersisted_time_restarts_after_it() {
+        assert_eq!(
+            run_two_deletes((110_000, 120_000), (140_000, 146_000), 146_000),
+            vec![(100_000, 110_000), (120_000, 140_000), (146_000, 150_000)]
+        );
+    }
+
+    #[test]
+    fn delete_all_after_range_deletion_restores_nothing() {
+        let conn = db::open(Path::new(":memory:")).unwrap();
+        let ctl = Control::default();
+        let mut e = Engine::new(DEFAULT_IDLE_MS);
+        let mut w = Writer::default();
+        for t in 100..=145 {
+            w.apply(&conn, e.tick(&sample(t * 1000)));
+        }
+        ctl.live_session
+            .store(w.session_id.unwrap(), Ordering::SeqCst);
+        crate::settings::delete_range_at(&conn, &ctl, 110_000, 120_000, 145_500).unwrap();
+        // Mirrors delete_all_data.
+        db::delete_all(&conn).unwrap();
+        ctl.live_session.store(0, Ordering::SeqCst);
+        ctl.reopen_at.store(146_000, Ordering::SeqCst);
+        let acts = e.tick(&sample(146_500));
+        assert!(ctl.reopen.swap(false, Ordering::SeqCst));
+        w.reset();
+        w.apply(&conn, reconcile_after_delete(&mut e, acts, 146_000));
+        w.apply(&conn, e.flush(150_000));
+        assert_eq!(spans(&conn), vec![(146_000, 150_000)]);
     }
 
     /// The issue scenario: A until t=200, B after; input stops at t=100; the

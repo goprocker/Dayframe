@@ -381,4 +381,86 @@ mod tests {
         w.apply(&conn, e.flush(150_000));
         assert_eq!(spans(&conn), vec![(145_500, 150_000)]);
     }
+
+    /// Two deletion commands run before the tracker reconciles (the second
+    /// one reads the stale live row id unless the first cleared it).
+    fn run_two_deletes(first: (i64, i64), second: (i64, i64), at2: i64) -> Vec<(i64, i64)> {
+        let conn = db::open(Path::new(":memory:")).unwrap();
+        let ctl = Control::default();
+        let mut e = Engine::new(DEFAULT_IDLE_MS);
+        let mut w = Writer::default();
+        for t in 100..=145 {
+            w.apply(&conn, e.tick(&sample(t * 1000)));
+        }
+        ctl.live_session.store(w.session_id.unwrap(), Ordering::SeqCst);
+        crate::settings::delete_range_at(&conn, &ctl, first.0, first.1, 145_500).unwrap();
+        crate::settings::delete_range_at(&conn, &ctl, second.0, second.1, at2).unwrap();
+        let acts = e.tick(&sample(at2.max(146_000)));
+        let acts = if ctl.reopen.swap(false, Ordering::SeqCst) {
+            w.reset();
+            reconcile_after_delete(&mut e, acts, ctl.reopen_at.load(Ordering::SeqCst))
+        } else {
+            acts
+        };
+        w.apply(&conn, acts);
+        w.apply(&conn, e.flush(150_000));
+        let s = spans(&conn);
+        for pair in s.windows(2) {
+            assert!(pair[0].1 <= pair[1].0, "overlapping sessions: {s:?}");
+        }
+        s
+    }
+
+    #[test]
+    fn second_unrelated_deletion_does_not_restore_first() {
+        assert_eq!(
+            run_two_deletes((110_000, 120_000), (0, 50_000), 146_000),
+            vec![(100_000, 110_000), (120_000, 145_500), (145_500, 150_000)]
+        );
+    }
+
+    #[test]
+    fn nested_and_overlapping_second_deletions_stay_deleted() {
+        // Nested inside the first range.
+        assert_eq!(
+            run_two_deletes((110_000, 120_000), (112_000, 118_000), 146_000),
+            vec![(100_000, 110_000), (120_000, 145_500), (145_500, 150_000)]
+        );
+        // Overlapping the first range and eating into the retained tail.
+        assert_eq!(
+            run_two_deletes((110_000, 120_000), (115_000, 130_000), 146_000),
+            vec![(100_000, 110_000), (130_000, 145_500), (145_500, 150_000)]
+        );
+    }
+
+    #[test]
+    fn second_deletion_reaching_unpersisted_time_restarts_after_it() {
+        assert_eq!(
+            run_two_deletes((110_000, 120_000), (140_000, 146_000), 146_000),
+            vec![(100_000, 110_000), (120_000, 140_000), (146_000, 150_000)]
+        );
+    }
+
+    #[test]
+    fn delete_all_after_range_deletion_restores_nothing() {
+        let conn = db::open(Path::new(":memory:")).unwrap();
+        let ctl = Control::default();
+        let mut e = Engine::new(DEFAULT_IDLE_MS);
+        let mut w = Writer::default();
+        for t in 100..=145 {
+            w.apply(&conn, e.tick(&sample(t * 1000)));
+        }
+        ctl.live_session.store(w.session_id.unwrap(), Ordering::SeqCst);
+        crate::settings::delete_range_at(&conn, &ctl, 110_000, 120_000, 145_500).unwrap();
+        // Mirrors delete_all_data.
+        db::delete_all(&conn).unwrap();
+        ctl.live_session.store(0, Ordering::SeqCst);
+        ctl.reopen_at.store(146_000, Ordering::SeqCst);
+        let acts = e.tick(&sample(146_500));
+        assert!(ctl.reopen.swap(false, Ordering::SeqCst));
+        w.reset();
+        w.apply(&conn, reconcile_after_delete(&mut e, acts, 146_000));
+        w.apply(&conn, e.flush(150_000));
+        assert_eq!(spans(&conn), vec![(146_000, 150_000)]);
+    }
 }
